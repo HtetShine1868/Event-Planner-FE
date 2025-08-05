@@ -1,24 +1,62 @@
 // src/services/authService.js
-import axios from 'axios';
+import jwtDecode from 'jwt-decode';
 
-const API_URL = 'http://localhost:8080/api/auth';
+export const loginUser = async (credentials) => {
+  const res = await fetch("/api/auth/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(credentials),
+  });
 
-export const register = async (userData) => {
-  const response = await axios.post(`${API_URL}/register`, userData);
-  const token = response.data.token;
-  if (token) localStorage.setItem('token', token);
-  return response.data;
+  if (!res.ok) {
+    throw new Error("Login failed");
+  }
+
+  const data = await res.json();
+  const token = data.token;
+
+  localStorage.setItem("token", token);
+
+  // Decode and extract role
+  const decoded = jwtDecode(token);
+  const role = decoded.authorities?.[0] || "ROLE_USER";
+  localStorage.setItem("role", role);
+
+  return data;
 };
 
-export const login = async (userData) => {
-  const response = await axios.post(`${API_URL}/login`, userData);
-  const token = response.data.token;
-  if (token) localStorage.setItem('token', token);
-  return response.data;
+export const registerUser = async (credentials) => {
+  const res = await fetch("/api/auth/register", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(credentials),
+  });
+
+  if (!res.ok) {
+    throw new Error("Register failed");
+  }
+
+  const data = await res.json();
+  const token = data.token;
+
+  localStorage.setItem("token", token);
+
+  // Decode and extract role
+  const decoded = jwtDecode(token);
+  const role = decoded.authorities?.[0] || "ROLE_USER";
+  localStorage.setItem("role", role);
+
+  return data;
 };
 
-export const logout = () => {
-  localStorage.removeItem('token');
+export const logoutUser = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("role");
 };
 
-export const getToken = () => localStorage.getItem('token');
+export const getToken = () => localStorage.getItem("token");
+export const getRole = () => localStorage.getItem("role");
