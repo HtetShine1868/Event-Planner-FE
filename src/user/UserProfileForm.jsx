@@ -14,18 +14,44 @@ const UserProfileForm = () => {
 
   const [errors, setErrors] = useState({});
 
-  const eventOptions = ["Wedding", "Conference", "Concert", "Birthday", "Corporate"];
+  const eventOptions = [
+    "Wedding", "Conference", "Concert", "Birthday",
+    "Corporate", "Festival", "Seminar", "Workshop"
+  ];
 
   const validate = () => {
     const newErrors = {};
 
-    if (!formData.fullName.trim()) newErrors.fullName = "Full name is required.";
-    if (!formData.email.includes("@")) newErrors.email = "Enter a valid email.";
-    if (!/^\d{7,15}$/.test(formData.phone)) newErrors.phone = "Enter a valid phone number.";
-    if (formData.password.length < 6) newErrors.password = "Password must be at least 6 characters.";
-    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = "Passwords do not match.";
-    if (!formData.role) newErrors.role = "Please select a role.";
-    if (formData.preferences.length === 0) newErrors.preferences = "Choose at least one event type.";
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = "Full name is required.";
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
+    if (!emailRegex.test(formData.email)) {
+      newErrors.email = "Invalid email format.";
+    }
+
+    const phoneRegex = /^\d{7,15}$/;
+    if (!phoneRegex.test(formData.phone)) {
+      newErrors.phone = "Enter a valid phone number (7-15 digits).";
+    }
+
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^])[A-Za-z\d@$!%*?&#^]{8,}$/;
+    if (!passwordRegex.test(formData.password)) {
+      newErrors.password = "Password must be 8+ characters, include uppercase, lowercase, number, and special character.";
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match.";
+    }
+
+    if (!formData.role) {
+      newErrors.role = "Select a role.";
+    }
+
+    if (formData.preferences.length === 0) {
+      newErrors.preferences = "Select at least one event type.";
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -83,7 +109,7 @@ const UserProfileForm = () => {
 
       <label>Role:</label>
       <select name="role" value={formData.role} onChange={handleChange}>
-        <option value="">Select Role</option>
+        <option value="">-- Select Role --</option>
         <option value="attendee">Attendee</option>
         <option value="organizer">Organizer</option>
         <option value="vendor">Vendor</option>
@@ -91,9 +117,12 @@ const UserProfileForm = () => {
       {errors.role && <span className="error">{errors.role}</span>}
 
       <label>Preferred Event Types:</label>
-      <div className="checkbox-group">
+      <div className="preferences-container">
         {eventOptions.map((event) => (
-          <label key={event}>
+          <label
+            key={event}
+            className={`preference-option ${formData.preferences.includes(event) ? "selected" : ""}`}
+          >
             <input
               type="checkbox"
               value={event}
