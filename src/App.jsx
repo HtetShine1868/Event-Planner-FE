@@ -1,10 +1,10 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 
+import ProtectedRoute from "./components/ProtectedRoute";
 import LoginPage from "./features/auth/LoginPage";
 import RegisterPage from "./features/auth/RegisterPage";
 import Dashboard from "./pages/Dashboard";
-import ProtectedRoute from "./components/ProtectedRoute";
+import UserProfileForm from './user/UserProfileForm';
 
 const App = () => {
   return (
@@ -17,6 +17,15 @@ const App = () => {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        {/* Add this new route to show your profile form */}
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <UserProfileForm />
             </ProtectedRoute>
           }
         />
