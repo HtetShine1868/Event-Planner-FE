@@ -20,15 +20,8 @@ const App = () => {
             </ProtectedRoute>
           }
         />
-        {/* Add this new route to show your profile form */}
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <UserProfileForm />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/profile" element={<UserProfileForm />} />
+
       </Routes>
     </Router>
   );
