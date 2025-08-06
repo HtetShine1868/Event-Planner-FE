@@ -85,7 +85,7 @@ const UserProfileForm = () => {
 
   return (
     <form className="profile-form" onSubmit={handleSubmit}>
-      <h2>User Profile Form</h2>
+      <h1>User Profile Form</h1>
 
       <label>Full Name:</label>
       <input type="text" name="fullName" value={formData.fullName} onChange={handleChange} />
