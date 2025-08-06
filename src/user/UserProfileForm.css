@@ -1,47 +1,81 @@
 .profile-form {
-  max-width: 400px;
-  margin: auto;
-  background: #f9f9f9;
-  padding: 25px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  max-width: 500px;
+  margin: 30px auto;
+  padding: 30px;
+  background-color: #f4f8fb;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  font-family: "Segoe UI", sans-serif;
 }
 
 .profile-form h2 {
   text-align: center;
   margin-bottom: 20px;
+  color: #1e3a8a;
 }
 
 .profile-form label {
   display: block;
   margin: 10px 0 5px;
+  font-weight: 600;
 }
 
 .profile-form input,
 .profile-form select {
   width: 100%;
-  padding: 8px;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
   margin-bottom: 10px;
-}
-
-.checkbox-group {
-  display: flex;
-  flex-direction: column;
 }
 
 .error {
-  color: red;
-  font-size: 0.8rem;
+  color: #d32f2f;
+  font-size: 0.85rem;
   margin-top: -8px;
   margin-bottom: 10px;
+  display: block;
+}
+
+.preferences-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.preference-option {
+  background-color: #e0f2fe;
+  padding: 8px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  border: 1px solid #93c5fd;
+  transition: 0.3s;
+  font-size: 0.95rem;
+}
+
+.preference-option.selected {
+  background-color: #3b82f6;
+  color: white;
+  border-color: #1d4ed8;
+}
+
+.preference-option input {
+  display: none;
 }
 
 button {
   width: 100%;
-  padding: 10px;
-  background-color: #1465c0;
+  padding: 12px;
+  background-color: #1e40af;
   color: white;
+  font-weight: 600;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
+  transition: 0.2s;
+}
+
+button:hover {
+  background-color: #2563eb;
 }
