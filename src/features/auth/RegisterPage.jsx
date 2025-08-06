@@ -1,7 +1,7 @@
 // src/pages/RegisterPage.jsx
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { register } from '../../services/authService';
+import { registerUser } from '../../services/authService'; // ✅ CORRECT
 import { Eye, EyeOff } from 'lucide-react';
 
 const RegisterPage = () => {
@@ -21,7 +21,7 @@ const RegisterPage = () => {
     setLoading(true);
     setError('');
     try {
-      await register(form);
+      await registerUser(form);
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');

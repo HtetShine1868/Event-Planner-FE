@@ -1,62 +1,18 @@
-// src/services/authService.js
-import jwtDecode from 'jwt-decode';
+import axiosInstance from './axiosInstance';
 
-export const loginUser = async (credentials) => {
-  const res = await fetch("/api/auth/login", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(credentials),
-  });
-
-  if (!res.ok) {
-    throw new Error("Login failed");
+export const loginUser = async ({ username, password }) => {
+  const response = await axiosInstance.post('/auth/login', { username, password });
+  if (response.data.token) {
+    localStorage.setItem('token', response.data.token);
   }
-
-  const data = await res.json();
-  const token = data.token;
-
-  localStorage.setItem("token", token);
-
-  // Decode and extract role
-  const decoded = jwtDecode(token);
-  const role = decoded.authorities?.[0] || "ROLE_USER";
-  localStorage.setItem("role", role);
-
-  return data;
+  return response.data;
 };
 
-export const registerUser = async (credentials) => {
-  const res = await fetch("/api/auth/register", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(credentials),
-  });
-
-  if (!res.ok) {
-    throw new Error("Register failed");
-  }
-
-  const data = await res.json();
-  const token = data.token;
-
-  localStorage.setItem("token", token);
-
-  // Decode and extract role
-  const decoded = jwtDecode(token);
-  const role = decoded.authorities?.[0] || "ROLE_USER";
-  localStorage.setItem("role", role);
-
-  return data;
+export const registerUser = async (formData) => {
+  const response = await axiosInstance.post('/auth/register', formData);
+  return response.data;
 };
 
 export const logoutUser = () => {
-  localStorage.removeItem("token");
-  localStorage.removeItem("role");
+  localStorage.removeItem('token');
 };
-
-export const getToken = () => localStorage.getItem("token");
-export const getRole = () => localStorage.getItem("role");

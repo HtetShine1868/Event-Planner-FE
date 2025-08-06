@@ -1,7 +1,8 @@
 // src/pages/LoginPage.jsx
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { login } from '../../services/authService';
+import { loginUser } from '../../services/authService';
+import { registerUser } from '../../services/authService';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -20,8 +21,8 @@ const LoginPage = () => {
     setLoading(true);
     setError('');
     try {
-      await login(form);
-      navigate('/dashboard');
+      await loginUser(form);
+      navigate('/user-dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please try again.');
     } finally {

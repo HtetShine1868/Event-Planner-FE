@@ -1,20 +1,21 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-
-import LoginPage from "./features/auth/LoginPage";
-import RegisterPage from "./features/auth/RegisterPage";
- // 👈 Your protected page
-import PrivateRoute from "./routes/PrivateRoute";
-
+import { Routes, Route, Navigate } from 'react-router-dom';
+import LoginPage from './features/auth/LoginPage';
+import RegisterPage from './features/auth/RegisterPage';
+import UserDashboard from './features/user/UserDashboard';
+import PrivateRoute from './routes/PrivateRoute';
 
 function App() {
   return (
-    <Router>
-      <Routes>
-
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-      </Routes>
-    </Router>
+    <Routes>
+      <Route path="/" element={<Navigate to="/login" />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/user-dashboard" element={
+        <PrivateRoute>
+          <UserDashboard />
+        </PrivateRoute>
+      } />
+    </Routes>
   );
 }
 

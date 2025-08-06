@@ -1,31 +1,25 @@
 import axios from 'axios';
 
-// Get events user registered for
-export const getMyRegisteredEvents = async (userId) => {
-  const response = await axios.get(`/api/registrations/my`);
-  return response.data;
-};
+const API_BASE = 'http://localhost:8080/api/event'; // adjust if different
 
-// Get trending events
-export const getTrendingEvents = async () => {
-  const response = await axios.get(`/api/event/trending`); // adjust path if needed
-  return response.data;
-};
-
-// Search events by query params
-export const searchEvents = async (query) => {
-  const response = await axios.get(`/api/event/search`, { params: query });
-  return response.data;
-};
-
-// Get all approved events
 export const getAllApprovedEvents = async () => {
-  const response = await axios.get(`/api/event`);
+  const response = await axios.get(`${API_BASE}`);
   return response.data;
 };
 
-// Register user for event
-export const registerForEvent = async (eventId, userId) => {
-  const response = await axios.post(`/api/events/${eventId}/register`, { userId });
+export const getTrendingEvents = async () => {
+  const response = await axios.get(`${API_BASE}/trending`);
   return response.data;
 };
+
+
+export const searchEvents = async (keyword) => {
+  const response = await axios.get(`${API_BASE}/search`, {
+    params: { keyword }
+  });
+  return response.data;
+};
+
+
+
+
