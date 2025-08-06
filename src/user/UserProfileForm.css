@@ -66,10 +66,10 @@
 
 button {
   width: 100%;
-  padding: 12px;
+  padding: 14px;
   background-color: #1e40af;
-  color: rgb(241, 223, 223);
-  font-weight: 600;
+  color: white(253, 253, 253);
+  font-weight: bold;
   border: none;
   border-radius: 8px;
   cursor: pointer;
