@@ -1,8 +1,8 @@
 .profile-form {
-  max-width: 600px;
+  max-width: 500px;
   margin: 30px auto;
   padding: 30px;
-  background-color: #f4f8fb;
+  background-color: #f8f8f8;
   border-radius: 15px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   font-family: "Segoe UI", sans-serif;
@@ -10,8 +10,9 @@
 
 .profile-form h1 {
   text-align: center;
+  font-size: 1.35rem;
   margin-bottom: 20px;
-  color: #041c5e;
+  color: #1b07f4;
 }
 
 .profile-form label {
@@ -45,19 +46,19 @@
 }
 
 .preference-option {
-  background-color: #e0f2fe;
+  background-color: #ede9fe;
   padding: 8px 12px;
   border-radius: 20px;
   cursor: pointer;
-  border: 1px solid #93c5fd;
+  border: 1px solid #4119f3;
   transition: 0.3s;
   font-size: 0.95rem;
 }
 
 .preference-option.selected {
-  background-color: #3b82f6;
+  background-color: #7c3aed;
   color: white;
-  border-color: #1d4ed8;
+  border-color: #1a1fc9;
 }
 
 .preference-option input {
@@ -67,15 +68,15 @@
 button {
   width: 100%;
   padding: 14px;
-  background-color: #1e40af;
-  color: white(253, 253, 253);
+  background: linear-gradient(135deg, #4f46e5, #8b5cf6);
+  color: #fbfcfe;
   font-weight: bold;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   transition: 0.2s;
+  letter-spacing: 0.5px;
 }
 
 button:hover {
-  background-color: #2563eb;
-}
+background: linear-gradient(135deg, #4338ca, #7c3aed);}
