@@ -2,7 +2,7 @@
   max-width: 500px;
   margin: 30px auto;
   padding: 30px;
-  background-color: #f2f8fb;
+  background-color: #e6f4fb;
   border-radius: 15px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   font-family: "Segoe UI", sans-serif;
@@ -69,7 +69,7 @@ button {
   width: 100%;
   padding: 14px;
   background: linear-gradient(135deg, #4f46e5, #8b5cf6);
-  color: #9771f0;
+  color: #fbfcfe;
   font-weight: bold;
   border: none;
   border-radius: 8px;
