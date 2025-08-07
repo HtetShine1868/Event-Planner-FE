@@ -1,18 +1,15 @@
-import axiosInstance from './axiosInstance';
+// src/services/authService.js
+import axiosInstance from "./axiosInstance";
 
-export const loginUser = async ({ username, password }) => {
-  const response = await axiosInstance.post('/auth/login', { username, password });
-  if (response.data.token) {
-    localStorage.setItem('token', response.data.token);
-  }
+// ✅ Login API call
+export const login = async (credentials) => {
+  console.log("Sending:", credentials);
+  const response = await axiosInstance.post("/auth/login", credentials);
   return response.data;
 };
 
-export const registerUser = async (formData) => {
-  const response = await axiosInstance.post('/auth/register', formData);
+// ✅ Register API call
+export const registerUser = async (userData) => {
+  const response = await axiosInstance.post("/auth/register", userData);
   return response.data;
-};
-
-export const logoutUser = () => {
-  localStorage.removeItem('token');
 };

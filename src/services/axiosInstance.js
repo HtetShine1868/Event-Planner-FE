@@ -1,14 +1,20 @@
-import axios from "axios";
-
-const token = localStorage.getItem("token");
+// src/services/axiosInstance.js
+import axios from 'axios';
 
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:8080/api",
+  baseURL: 'http://localhost:8080/api',
   headers: {
-    "Content-Type": "application/json",
-    Authorization: token ? `Bearer ${token}` : undefined,
+    'Content-Type': 'application/json',
   },
-  withCredentials: true, // ⬅️ Important for CORS
+});
+
+// 🔐 Add JWT token to every request if available
+axiosInstance.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 export default axiosInstance;

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { searchEvents } from '../../services/eventService';
+import { searchEvents } from '../../../services/eventService';
 
 const SearchEvents = () => {
   const [query, setQuery] = useState('');
