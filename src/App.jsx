@@ -9,12 +9,15 @@ import UserDashboard from './features/user/UserDashboard';
 import Dashboard from "./pages/Dashboard";
 import UserProfileForm from './user/UserProfileForm';
 
+import Navibar from "./components/Navbar";
+import HomePage from "./pages/HomePage";
+
 const App = () => {
   return (
     <Router>
       <Routes>
-        {/* Redirect root path to /login */}
-        <Route path="/" element={<Navigate to="/login" />} />
+        {/* Optional: Home route for main landing page */}
+        <Route path="/" element={<HomePage />} />
 
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
@@ -41,3 +44,4 @@ const App = () => {
 };
 
 export default App;
+
