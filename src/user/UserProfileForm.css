@@ -1,0 +1,83 @@
+.profileFormContainer {
+  max-width: 500px;
+  margin: 30px auto;
+  padding: 30px;
+  background-color: #e6f4fb;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  font-family: "Segoe UI", sans-serif;
+}
+
+.profileFormTitle {
+  text-align: center;
+  font-size: 1.35rem;
+  margin-bottom: 20px;
+  color: #1b07f4;
+}
+
+.formLabel {
+  display: block;
+  margin: 10px 0 5px;
+  font-weight: 600;
+}
+
+.formInput,
+.formSelect {
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  margin-bottom: 10px;
+}
+
+.errorText {
+  color: #d32f2f;
+  font-size: 0.85rem;
+  margin-top: -8px;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.preferencesContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.preferenceOption {
+  background-color: #ede9fe;
+  padding: 8px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  border: 1px solid #4119f3;
+  transition: 0.3s;
+  font-size: 0.95rem;
+}
+
+.preferenceOptionSelected {
+  background-color: #7c3aed;
+  color: white;
+  border-color: #1a1fc9;
+}
+
+.preferenceOption input {
+  display: none;
+}
+
+.submitButton {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #4f46e5, #8b5cf6);
+  color: #fbfcfe;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+  letter-spacing: 0.5px;
+}
+
+.submitButton:hover {
+  background: linear-gradient(135deg, #4338ca, #7c3aed);
+}
