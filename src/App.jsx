@@ -15,7 +15,7 @@ const App = () => {
       <Routes>
         {/* Redirect root path to /login */}
         <Route path="/" element={<Navigate to="/login" />} />
-        
+
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
 
@@ -33,6 +33,7 @@ const App = () => {
           </PrivateRoute>
         } />
 
+        {/* Regular route for user profile */}
         <Route path="/profile" element={<UserProfileForm />} />
       </Routes>
     </Router>
