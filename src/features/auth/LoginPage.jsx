@@ -1,67 +1,82 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { login } from "../../services/authService";
 
 const LoginPage = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({ username: "", password: "" });
+  const [error, setError] = useState("");
   const navigate = useNavigate();
-  const { login } = useAuth();
 
-  const handleLogin = (e) => {
+  const handleChange = (e) => {
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Login clicked", { email, password });
+    setError("");
 
-    // Fake login: set user with email
-    login({ email });
-    navigate("/dashboard");
+    try {
+      const data = await login(formData);
+      localStorage.setItem("token", data.token); // store JWT token
+      navigate("/user-dashboard"); // or whatever route
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("Invalid username or password.");
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <form
-        onSubmit={handleLogin}
-        className="bg-white shadow-md rounded-lg p-8 w-full max-w-md"
-      >
-        <h2 className="text-2xl font-bold text-center text-blue-600 mb-6">
-          Login
-        </h2>
+    <div className="flex items-center justify-center min-h-screen bg-gray-100 px-4">
+      <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
+        <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Login</h2>
 
-        <input
-          type="email"
-          placeholder="Email"
-          className="w-full mb-4 px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
+        {error && (
+          <div className="mb-4 p-2 text-red-700 bg-red-100 rounded">{error}</div>
+        )}
 
-        <input
-          type="password"
-          placeholder="Password"
-          className="w-full mb-6 px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-gray-600 mb-1">Username</label>
+            <input
+              type="text"
+              name="username"
+              value={formData.username}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
 
-        <button
-          type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
-        >
-          Login
-        </button>
+          <div>
+            <label className="block text-gray-600 mb-1">Password</label>
+            <input
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
 
-        <p className="mt-4 text-sm text-center">
-          Don't have an account?{" "}
-          <span
-            onClick={() => navigate("/register")}
-            className="text-blue-600 hover:underline cursor-pointer"
+          <button
+            type="submit"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded transition"
           >
-            Register
-          </span>
+            Login
+          </button>
+        </form>
+
+        <p className="text-sm text-center mt-4">
+          Don't have an account?{" "}
+          <a href="/register" className="text-blue-600 hover:underline">
+            Register here
+          </a>
         </p>
-      </form>
+      </div>
     </div>
   );
 };

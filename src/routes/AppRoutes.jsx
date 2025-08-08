@@ -1,15 +1,15 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import LoginPage from "../features/auth/LoginPage";
-import RegisterPage from "../features/auth/RegisterPage";
+import { Navigate } from 'react-router-dom';
+import Login from '@/features/auth/Login';
+import Register from '@/features/auth/Register';
+import UserDashboard from '@/features/user/UserDashboard';
+// Import other dashboard components if needed
 
-const AppRoutes = () => (
-  <Router>
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
-      <Route path="*" element={<LoginPage />} /> {/* fallback route */}
-    </Routes>
-  </Router>
-);
+const routes = [
+  { path: '/', element: <Navigate to="/login" /> },
+  { path: '/login', element: <Login /> },
+  { path: '/register', element: <Register /> },
+  { path: '/dashboard', element: <UserDashboard /> },  // ✅ Make sure this is here!
+  // You can also define child routes under /dashboard if needed
+];
 
-export default AppRoutes;
+export default routes;
