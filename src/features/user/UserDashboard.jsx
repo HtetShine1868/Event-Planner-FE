@@ -2,13 +2,14 @@
 import React, { useEffect, useState, useRef } from 'react';
 import API from '../../services/axiosInstance';
 import EventCard from '../../components/common/EventCard';
+import Navibar from '../../components/Navibar';
 import { useNavigate } from 'react-router-dom';
 import { jwtDecode }from 'jwt-decode';
 
 const PAGE_SIZE = 5;
 
 const UserDashboard = () => {
-  const [activeTab, setActiveTab] = useState('trending');
+  const [activeTab, setActiveTab] = useState('trending'); 
 
   // Events and pagination states for each tab
   const [trendingEvents, setTrendingEvents] = useState([]);
@@ -22,6 +23,10 @@ const UserDashboard = () => {
   const [allEvents, setAllEvents] = useState([]);
   const [allPage, setAllPage] = useState(0);
   const [allTotalPages, setAllTotalPages] = useState(1);
+  
+  // Filters for All Events tab
+  const [filterCategoryId, setFilterCategoryId] = useState('');
+  const [filterLocation, setFilterLocation] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -75,7 +80,15 @@ const UserDashboard = () => {
           break;
 
         case 'all':
-          res = await API.get(`/event/approve?page=${page}&size=${PAGE_SIZE}`);
+          // Use search endpoint with filters for 'all' tab
+          const params = {
+            page,
+            size: PAGE_SIZE,
+          };
+          if (filterCategoryId) params.categoryId = filterCategoryId;
+          if (filterLocation) params.location = filterLocation;
+
+          res = await API.get('/event/search', { params });
           setAllEvents(res.data.content || []);
           setAllTotalPages(res.data.totalPages || 1);
           setAllPage(page);
@@ -93,12 +106,20 @@ const UserDashboard = () => {
     }
   };
 
-  // Fetch initial data on mount for all tabs page 0
+  // Fetch initial data on mount for trending and registered tabs
   useEffect(() => {
     fetchEvents('trending', 0);
     fetchEvents('registered', 0);
-    fetchEvents('all', 0);
   }, []);
+
+  // Fetch all events when tab, page or filters change
+  useEffect(() => {
+    if (activeTab === 'all') {
+      fetchEvents('all', allPage);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, allPage, filterCategoryId, filterLocation]);
+
   // Fetch user profile on mount
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -201,6 +222,7 @@ const UserDashboard = () => {
     localStorage.removeItem('token');
     navigate('/login');
   };
+
   // Tabs config
   const tabs = [
     { id: 'trending', label: 'Trending Events' },
@@ -230,7 +252,7 @@ const UserDashboard = () => {
       break;
   }
 
-  // Filter events by search term
+  // Filter events by search term (client-side)
   const filteredEvents = eventsToShow.filter(event =>
     event.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -262,6 +284,10 @@ const UserDashboard = () => {
 
   return (
     <div className="p-6 max-w-5xl mx-auto relative font-sans">
+    
+      <Navibar />
+      
+
       {/* Header */}
       <header className="flex justify-between items-center mb-6 gap-4">
         <h1 className="text-3xl font-extrabold text-gray-900 tracking-wide flex-shrink-0">
@@ -371,9 +397,9 @@ const UserDashboard = () => {
                       className="w-full border border-gray-300 rounded px-3 py-1"
                     >
                       <option value="">Select Gender</option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
+                      <option value="MALE">Male</option>
+                      <option value="FEMALE">Female</option>
+                      <option value="OTHER">Other</option>
                     </select>
                   ) : (
                     <p>{user?.gender ? user.gender.charAt(0).toUpperCase() + user.gender.slice(1).toLowerCase() : '-'}</p>
@@ -457,6 +483,38 @@ const UserDashboard = () => {
           </button>
         ))}
       </nav>
+
+      {/* Filters only for "All Events" tab */}
+      {activeTab === 'all' && (
+        <div className="flex flex-wrap gap-4 mb-6">
+          <select
+            value={filterCategoryId}
+            onChange={(e) => {
+              setFilterCategoryId(e.target.value);
+              setAllPage(0); // reset page on filter change
+            }}
+            className="border border-gray-300 rounded px-3 py-2 max-w-xs"
+          >
+            <option value="">All Categories</option>
+            {/* Example hardcoded categories, replace with dynamic if available */}
+            <option value="1">Music</option>
+            <option value="2">Sports</option>
+            <option value="3">Tech</option>
+            <option value="4">Art</option>
+          </select>
+
+          <input
+            type="text"
+            placeholder="Filter by location"
+            value={filterLocation}
+            onChange={(e) => {
+              setFilterLocation(e.target.value);
+              setAllPage(0);
+            }}
+            className="border border-gray-300 rounded px-3 py-2 max-w-xs"
+          />
+        </div>
+      )}
 
       {/* Events */}
       <section>
