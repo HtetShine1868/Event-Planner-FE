@@ -1,28 +1,38 @@
-// src/App.jsx
-import { Routes, Route, Navigate } from "react-router-dom";
-
-import PrivateRoute from './routes/PrivateRoute';
+import { Routes, Route } from "react-router-dom";
 
 import LoginPage from "./features/auth/LoginPage";
 import RegisterPage from "./features/auth/RegisterPage";
 import UserDashboard from './features/user/UserDashboard';
 import UserProfileForm from './user/UserProfileForm';
-
-import Navibar from "./components/Navbar";
 import HomePage from "./pages/HomePage";
+import RoleRedirect from "./components/RoleRedirect";
+import OrganizerDashboard from "./features/organizer/OrganizerDashboard";
+import AdminDashboard from "./features/admin/AdminDashboard";
+import ProtectedRoute from "./routes/ProtectedRoute";
 
 const App = () => {
   return (
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
 
+      <Route path="/redirect" element={<RoleRedirect />} />
+      <Route path="/user-profile-form" element={<UserProfileForm />} />
+      <Route element={<ProtectedRoute allowedRoles={["USER"]} />}>
+        <Route path="/user-dashboard" element={<UserDashboard />} />
+      </Route>
 
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-           <Route path="/user-dashboard" element={<UserDashboard />} />
-        <Route path="/profile" element={<UserProfileForm />} />
-      </Routes>
+      {/* Organizer dashboard, protected */}
+      <Route element={<ProtectedRoute allowedRoles={["ORGANIZER"]} />}>
+        <Route path="/organizer-dashboard" element={<OrganizerDashboard />} />
+      </Route>
 
+      {/* Admin dashboard, protected */}
+      <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
+      </Route>
+    </Routes>
   );
 };
 

@@ -1,31 +1,65 @@
-import React from 'react';
-import styles from './UserProfileForm.css';
+// src/features/user/UserProfileForm.jsx
+import React, { useState } from 'react';
+import axiosInstance from '../services/axiosInstance';
+import { useNavigate } from 'react-router-dom';
+import { jwtDecode }from 'jwt-decode';
+import './UserProfileForm.css'; // keep your styling here
 
 const UserProfileForm = () => {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    fullName: '',
+    gender: '',
+    dateOfBirth: '',
+    address: '',
+  });
+
+  const [error, setError] = useState(null);
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+
+    try {
+      const token = localStorage.getItem('token');
+      const decoded = jwtDecode(token);
+      const userId = decoded.id; // ✅ uses numeric id
+
+      await axiosInstance.post(`/user/${userId}/profile`, formData);
+      navigate('/user-dashboard'); // ✅ redirect after submit
+    } catch (err) {
+      setError('Failed to create profile');
+      console.error(err);
+    }
+  };
+
   return (
-    <div className={styles.profileFormContainer}>
-      <h1 className={styles.profileFormTitle}>User Profile</h1>
+    <div className="profile-form">
+      <h1>Complete Your Profile</h1>
+      <form onSubmit={handleSubmit}>
+        <label>Full Name</label>
+        <input name="fullName" value={formData.fullName} onChange={handleChange} required />
 
-      <form>
-        <label className={styles.formLabel}>Name</label>
-        <input type="text" className={styles.formInput} />
-
-        <label className={styles.formLabel}>Email</label>
-        <input type="email" className={styles.formInput} />
-
-        <label className={styles.formLabel}>Gender</label>
-        <select className={styles.formSelect}>
+        <label>Gender</label>
+        <select name="gender" value={formData.gender} onChange={handleChange} required>
           <option value="">Select</option>
-          <option value="male">Male</option>
-          <option value="female">Female</option>
+          <option value="MALE">Male</option>
+          <option value="FEMALE">Female</option>
+          <option value="OTHER">Other</option>
         </select>
 
-        <div className={styles.preferencesContainer}>
-          <div className={styles.preferenceOption}>Music</div>
-          <div className={`${styles.preferenceOption} ${styles.preferenceOptionSelected}`}>Sports</div>
-        </div>
+        <label>Date of Birth</label>
+        <input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} required />
 
-        <button type="submit" className={styles.submitButton}>Submit</button>
+        <label>Address</label>
+        <input name="address" value={formData.address} onChange={handleChange} required />
+
+        {error && <div className="error">{error}</div>}
+        <button type="submit">Submit Profile</button>
       </form>
     </div>
   );
