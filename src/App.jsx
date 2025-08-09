@@ -1,14 +1,13 @@
 // src/App.jsx
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 
-import PrivateRoute from './routes/PrivateRoute';
 
 import LoginPage from "./features/auth/LoginPage";
 import RegisterPage from "./features/auth/RegisterPage";
 import UserDashboard from './features/user/UserDashboard';
+import OrganizerApplicationForm from './organizer/OrganizerApplicationForm';
 import UserProfileForm from './user/UserProfileForm';
 
-import Navibar from "./components/Navbar";
 import HomePage from "./pages/HomePage";
 
 const App = () => {
@@ -21,6 +20,8 @@ const App = () => {
         <Route path="/register" element={<RegisterPage />} />
            <Route path="/user-dashboard" element={<UserDashboard />} />
         <Route path="/profile" element={<UserProfileForm />} />
+        <Route path="/organizer-application" element={<OrganizerApplicationForm />} />
+
       </Routes>
 
   );
