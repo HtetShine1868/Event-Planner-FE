@@ -3,14 +3,26 @@ import React, { useEffect, useState, useRef } from 'react';
 import API from '../../services/axiosInstance';
 import EventCard from '../../components/common/EventCard';
 import { useNavigate } from 'react-router-dom';
-
 import { jwtDecode }from 'jwt-decode';
-import Navibar from '../../components/Navibar';
+
+const PAGE_SIZE = 5;
+
 const UserDashboard = () => {
   const [activeTab, setActiveTab] = useState('trending');
+
+  // Events and pagination states for each tab
   const [trendingEvents, setTrendingEvents] = useState([]);
+  const [trendingPage, setTrendingPage] = useState(0);
+  const [trendingTotalPages, setTrendingTotalPages] = useState(1);
+
   const [registeredEvents, setRegisteredEvents] = useState([]);
+  const [registeredPage, setRegisteredPage] = useState(0);
+  const [registeredTotalPages, setRegisteredTotalPages] = useState(1);
+
   const [allEvents, setAllEvents] = useState([]);
+  const [allPage, setAllPage] = useState(0);
+  const [allTotalPages, setAllTotalPages] = useState(1);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -21,96 +33,240 @@ const UserDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
 
-  // Extract userId from token
+  // Edit mode states for profile
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    fullName: '',
+    gender: '',
+    dateOfBirth: '',
+    address: '',
+  });
+
+  // Extract userId from JWT token
   const getUserIdFromToken = () => {
     const token = localStorage.getItem('token');
     if (!token) return null;
     try {
       const decoded = jwtDecode(token);
-      return decoded.id; // Make sure your backend includes "id" claim in JWT
+      return decoded.id;
     } catch {
       return null;
     }
   };
-useEffect(() => {
-  const fetchData = async () => {
-    try {
-      const [trendingRes, registeredRes, allRes] = await Promise.all([
-        API.get('/event/trending?page=0&size=5'),
-        API.get('/registrations/my?page=0&size=5'),
-        API.get('/event/approve?page=0&size=5')
-      ]);
 
-      setTrendingEvents(trendingRes.data.content || []);
-      setRegisteredEvents(registeredRes.data.content || []);
-      setAllEvents(allRes.data.content || []);
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+  // Fetch events for a given tab and page
+  const fetchEvents = async (tab, page) => {
+    setLoading(true);
+    try {
+      let res;
+      switch (tab) {
+        case 'trending':
+          res = await API.get(`/event/trending?page=${page}&size=${PAGE_SIZE}`);
+          setTrendingEvents(res.data.content || []);
+          setTrendingTotalPages(res.data.totalPages || 1);
+          setTrendingPage(page);
+          break;
+
+        case 'registered':
+          res = await API.get(`/registrations/my?page=${page}&size=${PAGE_SIZE}`);
+          setRegisteredEvents(res.data.content || []);
+          setRegisteredTotalPages(res.data.totalPages || 1);
+          setRegisteredPage(page);
+          break;
+
+        case 'all':
+          res = await API.get(`/event/approve?page=${page}&size=${PAGE_SIZE}`);
+          setAllEvents(res.data.content || []);
+          setAllTotalPages(res.data.totalPages || 1);
+          setAllPage(page);
+          break;
+
+        default:
+          break;
+      }
+      setError(null);
+    } catch (err) {
+      console.error(`Error fetching ${tab} events:`, err);
+      setError(`Failed to load ${tab} events.`);
+    } finally {
+      setLoading(false);
     }
   };
 
-  fetchData();
-}, []);
-
-
-  // Fetch user profile
+  // Fetch initial data on mount for all tabs page 0
+  useEffect(() => {
+    fetchEvents('trending', 0);
+    fetchEvents('registered', 0);
+    fetchEvents('all', 0);
+  }, []);
+  // Fetch user profile on mount
   useEffect(() => {
     const fetchUserProfile = async () => {
       const userId = getUserIdFromToken();
       if (!userId) {
         console.error('User ID not found in token');
+        setError('User not authenticated.');
         return;
       }
 
+      setLoading(true);
       try {
         const res = await API.get(`/user/${userId}/profile`);
         setUser(res.data);
+        setError(null);
       } catch (err) {
         console.error('Failed to fetch user profile:', err);
+        setError('Failed to fetch profile. Please refresh.');
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchUserProfile();
   }, []);
 
-  // Close profile dropdown when clicking outside
+  // Initialize edit form when user data loads or changes
+  useEffect(() => {
+    if (user) {
+      setEditForm({
+        fullName: user.fullName || '',
+        gender: user.gender || '',
+        dateOfBirth: user.dateOfBirth ? user.dateOfBirth.slice(0, 10) : '',
+        address: user.address || '',
+      });
+    }
+  }, [user]);
+
+  // Close profile dropdown on outside click
   useEffect(() => {
     function handleClickOutside(event) {
       if (profileRef.current && !profileRef.current.contains(event.target)) {
         setProfileOpen(false);
+        setIsEditing(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Handle profile edit input change
+  const handleEditChange = (e) => {
+    setEditForm({ ...editForm, [e.target.name]: e.target.value });
+  };
+
+  // Save profile changes
+  const handleSaveProfile = async () => {
+    const userId = getUserIdFromToken();
+    if (!userId) {
+      alert('User not found.');
+      return;
+    }
+
+    // Prepare payload with gender uppercased
+    const payload = {
+      ...editForm,
+      gender: editForm.gender ? editForm.gender.toUpperCase() : null,
+    };
+
+    try {
+      setLoading(true);
+      await API.put(`/user/${userId}/profile`, payload);
+      setUser(payload);
+      setIsEditing(false);
+      setError(null);
+    } catch (err) {
+      console.error('Failed to save profile', err);
+      setError('Failed to save profile. Please try again.');
+      alert('Failed to save profile. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Cancel profile edit
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    if (user) {
+      setEditForm({
+        fullName: user.fullName || '',
+        gender: user.gender || '',
+        dateOfBirth: user.dateOfBirth ? user.dateOfBirth.slice(0, 10) : '',
+        address: user.address || '',
+      });
+    }
+  };
+
+  // Logout
   const handleLogout = () => {
     localStorage.removeItem('token');
     navigate('/login');
   };
-
+  // Tabs config
   const tabs = [
     { id: 'trending', label: 'Trending Events' },
     { id: 'registered', label: 'Registered Events' },
     { id: 'all', label: 'All Events' },
   ];
 
+  // Select events and pagination info for active tab
   let eventsToShow = [];
-  if (activeTab === 'trending') eventsToShow = trendingEvents;
-  else if (activeTab === 'registered') eventsToShow = registeredEvents;
-  else if (activeTab === 'all') eventsToShow = allEvents;
+  let currentPage = 0;
+  let totalPages = 1;
+  switch (activeTab) {
+    case 'trending':
+      eventsToShow = trendingEvents;
+      currentPage = trendingPage;
+      totalPages = trendingTotalPages;
+      break;
+    case 'registered':
+      eventsToShow = registeredEvents;
+      currentPage = registeredPage;
+      totalPages = registeredTotalPages;
+      break;
+    case 'all':
+      eventsToShow = allEvents;
+      currentPage = allPage;
+      totalPages = allTotalPages;
+      break;
+  }
 
+  // Filter events by search term
   const filteredEvents = eventsToShow.filter(event =>
     event.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Pagination buttons for events
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+
+    const buttons = [];
+    for (let i = 0; i < totalPages; i++) {
+      buttons.push(
+        <button
+          key={i}
+          className={`px-3 py-1 rounded ${
+            i === currentPage ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+          onClick={() => fetchEvents(activeTab, i)}
+        >
+          {i + 1}
+        </button>
+      );
+    }
+    return (
+      <div className="flex justify-center gap-2 mt-4">
+        {buttons}
+      </div>
+    );
+  };
+
   return (
-        <>
-      <Navibar />
     <div className="p-6 max-w-5xl mx-auto relative font-sans">
       {/* Header */}
       <header className="flex justify-between items-center mb-6 gap-4">
-        <h1 className="text-3xl font-extrabold text-gray-900 tracking-wide flex-shrink-0">User Dashboard</h1>
+        <h1 className="text-3xl font-extrabold text-gray-900 tracking-wide flex-shrink-0">
+          User Dashboard
+        </h1>
 
         {/* Right side: search bar + profile */}
         <div className="flex items-center space-x-4 flex-shrink-0">
@@ -142,19 +298,6 @@ useEffect(() => {
                   : user?.username?.slice(0, 2).toUpperCase()) || 'US'}
               </div>
               <span className="font-medium">{user?.fullName || user?.username || 'User'}</span>
-
-              <svg
-                className={`w-5 h-5 text-white transform transition-transform duration-300 ${
-                  profileOpen ? 'rotate-180' : ''
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
             </button>
 
             {/* Dropdown */}
@@ -176,25 +319,116 @@ useEffect(() => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 text-sm mb-5">
-                  <div>
+                {/* Editable profile fields */}
+                <div className="mb-5 space-y-4 text-sm">
+                  <div className="flex justify-between items-center">
                     <p className="font-semibold text-gray-600">Full Name</p>
+                    {!isEditing && (
+                      <button
+                        onClick={() => setIsEditing(true)}
+                        aria-label="Edit Full Name"
+                        title="Edit Profile"
+                        className="text-indigo-600 hover:text-indigo-800 focus:outline-none"
+                      >
+                        {/* Pencil SVG icon */}
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-5 w-5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-7-7l6 6"
+                          />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      name="fullName"
+                      value={editForm.fullName}
+                      onChange={handleEditChange}
+                      className="w-full border border-gray-300 rounded px-3 py-1"
+                    />
+                  ) : (
                     <p>{user?.fullName || '-'}</p>
-                  </div>
-                  <div>
+                  )}
+
+                  <div className="flex justify-between items-center">
                     <p className="font-semibold text-gray-600">Gender</p>
+                  </div>
+                  {isEditing ? (
+                    <select
+                      name="gender"
+                      value={editForm.gender}
+                      onChange={handleEditChange}
+                      className="w-full border border-gray-300 rounded px-3 py-1"
+                    >
+                      <option value="">Select Gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  ) : (
                     <p>{user?.gender ? user.gender.charAt(0).toUpperCase() + user.gender.slice(1).toLowerCase() : '-'}</p>
-                  </div>
-                  <div>
+                  )}
+
+                  <div className="flex justify-between items-center">
                     <p className="font-semibold text-gray-600">Date of Birth</p>
+                  </div>
+                  {isEditing ? (
+                    <input
+                      type="date"
+                      name="dateOfBirth"
+                      value={editForm.dateOfBirth}
+                      onChange={handleEditChange}
+                      className="w-full border border-gray-300 rounded px-3 py-1"
+                    />
+                  ) : (
                     <p>{user?.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString() : '-'}</p>
-                  </div>
-                  <div>
+                  )}
+
+                  <div className="flex justify-between items-center">
                     <p className="font-semibold text-gray-600">Address</p>
-                    <p>{user?.address || '-'}</p>
                   </div>
+                  {isEditing ? (
+                    <textarea
+                      name="address"
+                      value={editForm.address}
+                      onChange={handleEditChange}
+                      className="w-full border border-gray-300 rounded px-3 py-1 resize-none"
+                      rows={3}
+                    />
+                  ) : (
+                    <p>{user?.address || '-'}</p>
+                  )}
                 </div>
 
+                {/* Save and Cancel buttons */}
+                {isEditing && (
+                  <div className="flex space-x-3 mb-4">
+                    <button
+                      onClick={handleSaveProfile}
+                      className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded font-semibold"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={handleCancelEdit}
+                      className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 rounded font-semibold"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+
+                {/* Logout */}
                 <button
                   onClick={handleLogout}
                   className="w-full bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white py-2 rounded-xl font-semibold shadow-md transition-colors duration-300"
@@ -233,11 +467,16 @@ useEffect(() => {
         ) : filteredEvents.length === 0 ? (
           <p className="text-center text-gray-500">No events found.</p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {filteredEvents.map((event) => (
-              <EventCard key={event.id} event={event} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {filteredEvents.map((event) => (
+                <EventCard key={event.id} event={event} />
+              ))}
+            </div>
+
+            {/* Pagination controls */}
+            {renderPagination()}
+          </>
         )}
       </section>
 
@@ -252,7 +491,6 @@ useEffect(() => {
         }
       `}</style>
     </div>
-       </>
   );
 };
 
