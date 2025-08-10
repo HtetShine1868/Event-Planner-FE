@@ -1,6 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
+// Import your API call function for feedback summary
+
+import FeedbackSummary from '../../features/feedback/feedbackSummary';
+import FeedbackForm from '../../features/feedback/feedbackForm';
+import { getFeedbackSummary } from '../../features/feedback/feedbackAPI';
 
 const EventDetails = () => {
   const navigate = useNavigate();
@@ -9,6 +14,25 @@ const EventDetails = () => {
   // Event data & registration status passed via navigation state
   const { event, isRegistered } = location.state || {};
 
+  const [feedbackSummary, setFeedbackSummary] = useState(null);
+
+  // Fetch feedback summary when event changes
+  useEffect(() => {
+    if (!event) return;
+
+    const loadFeedbackSummary = async () => {
+      try {
+        const summary = await getFeedbackSummary(event.id);
+        setFeedbackSummary(summary);
+      } catch (err) {
+        console.error('Failed to load feedback summary:', err);
+      }
+    };
+
+    loadFeedbackSummary();
+  }, [event]);
+
+  // Early return if no event data available
   if (!event) {
     return (
       <div className="p-8 text-center text-gray-500">
@@ -120,6 +144,16 @@ const EventDetails = () => {
           <p className="text-sm text-gray-500">Organizer</p>
         </div>
       </div>
+
+      {/* Feedback Summary Section */}
+      {feedbackSummary && (
+        <section className="mb-8 p-4 bg-gray-100 rounded">
+          <h3 className="text-lg font-semibold mb-2">Feedback Summary</h3>
+          <p><strong>Average Rating:</strong> {feedbackSummary.averageRating?.toFixed(1) || 'N/A'}</p>
+          <p><strong>Total Feedbacks:</strong> {feedbackSummary.totalFeedbacks || 0}</p>
+          <p><strong>Sentiment Analysis:</strong> {feedbackSummary.sentimentSummary || 'N/A'}</p>
+        </section>
+      )}
 
       {/* Action Button */}
       <div>
