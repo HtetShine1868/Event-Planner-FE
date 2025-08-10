@@ -17,6 +17,7 @@ const UserDashboard = () => {
   const [trendingTotalPages, setTrendingTotalPages] = useState(1);
 
   const [registeredEvents, setRegisteredEvents] = useState([]);
+  const [registeredEventIds, setRegisteredEventIds] = useState(new Set());
   const [registeredPage, setRegisteredPage] = useState(0);
   const [registeredTotalPages, setRegisteredTotalPages] = useState(1);
 
@@ -37,7 +38,12 @@ const UserDashboard = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
-
+  
+  const handleUnauthorized = () => {
+    alert("Session expired. Please login again.");
+    localStorage.removeItem('token');
+    navigate('/login');
+  };
   // Edit mode states for profile
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -58,53 +64,69 @@ const UserDashboard = () => {
       return null;
     }
   };
+    useEffect(() => {
+      API.get('/registrations/my')
+        .then(res => {
+          setRegisteredEvents(res.data.content || []);
+          const ids = new Set((res.data.content || []).map(event => event.id));
+          setRegisteredEventIds(ids);
+        })
+        .catch(err => {
+          console.error('Error fetching registered events:', err);
+        });
+    }, []);
+
 
   // Fetch events for a given tab and page
-  const fetchEvents = async (tab, page) => {
-    setLoading(true);
-    try {
-      let res;
-      switch (tab) {
-        case 'trending':
-          res = await API.get(`/event/trending?page=${page}&size=${PAGE_SIZE}`);
-          setTrendingEvents(res.data.content || []);
-          setTrendingTotalPages(res.data.totalPages || 1);
-          setTrendingPage(page);
-          break;
+const fetchEvents = async (tab, page) => {
+  setLoading(true);
+  try {
+    let res;
+    switch (tab) {
+      case 'trending':
+        res = await API.get(`/event/trending?page=${page}&size=${PAGE_SIZE}`);
+        setTrendingEvents(res.data.content || []);
+        setTrendingTotalPages(res.data.totalPages || 1);
+        setTrendingPage(page);
+        break;
 
-        case 'registered':
-          res = await API.get(`/registrations/my?page=${page}&size=${PAGE_SIZE}`);
-          setRegisteredEvents(res.data.content || []);
-          setRegisteredTotalPages(res.data.totalPages || 1);
-          setRegisteredPage(page);
-          break;
+      case 'registered':
+        res = await API.get(`/registrations/my?page=${page}&size=${PAGE_SIZE}`);
+        setRegisteredEvents(res.data.content || []);
+        setRegisteredTotalPages(res.data.totalPages || 1);
+        setRegisteredPage(page);
+        break;
 
-        case 'all':
-          // Use search endpoint with filters for 'all' tab
-          const params = {
-            page,
-            size: PAGE_SIZE,
-          };
-          if (filterCategoryId) params.categoryId = filterCategoryId;
-          if (filterLocation) params.location = filterLocation;
+      case 'all':
+        const params = {
+          page,
+          size: PAGE_SIZE,
+        };
+        if (filterCategoryId) params.categoryId = filterCategoryId;
+        if (filterLocation) params.location = filterLocation;
 
-          res = await API.get('/event/search', { params });
-          setAllEvents(res.data.content || []);
-          setAllTotalPages(res.data.totalPages || 1);
-          setAllPage(page);
-          break;
+        res = await API.get('/event/search', { params });
+        setAllEvents(res.data.content || []);
+        setAllTotalPages(res.data.totalPages || 1);
+        setAllPage(page);
+        break;
 
-        default:
-          break;
-      }
-      setError(null);
-    } catch (err) {
+      default:
+        break;
+    }
+    setError(null);
+  } catch (err) {
+    if (err.response && err.response.status === 401) {
+      handleUnauthorized();  // call your alert + redirect function here
+    } else {
       console.error(`Error fetching ${tab} events:`, err);
       setError(`Failed to load ${tab} events.`);
-    } finally {
-      setLoading(false);
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // Fetch initial data on mount for trending and registered tabs
   useEffect(() => {
@@ -131,16 +153,19 @@ const UserDashboard = () => {
       }
 
       setLoading(true);
-      try {
-        const res = await API.get(`/user/${userId}/profile`);
-        setUser(res.data);
-        setError(null);
-      } catch (err) {
-        console.error('Failed to fetch user profile:', err);
-        setError('Failed to fetch profile. Please refresh.');
-      } finally {
-        setLoading(false);
-      }
+        try {
+          const res = await API.get(`/user/${userId}/profile`);
+          setUser(res.data);
+          setError(null);
+        } catch (err) {
+          if (err.response && err.response.status === 401) {
+            handleUnauthorized();
+          } else {
+            setError('Failed to fetch profile. Please refresh.');
+          }
+        } finally {
+          setLoading(false);
+        }
     };
 
     fetchUserProfile();
@@ -527,8 +552,12 @@ const UserDashboard = () => {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {filteredEvents.map((event) => (
-                <EventCard key={event.id} event={event} />
+                {filteredEvents.map((event) => (
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  isRegistered={registeredEventIds.has(event.id)} // true if registered for that event
+                />
               ))}
             </div>
 

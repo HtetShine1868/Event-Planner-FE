@@ -9,6 +9,7 @@ import RoleRedirect from "./components/RoleRedirect";
 import OrganizerDashboard from "./features/organizer/OrganizerDashboard";
 import AdminDashboard from "./features/admin/AdminDashboard";
 import ProtectedRoute from "./routes/ProtectedRoute";
+import EventDetails from './features/events/EventDetails';
 
 const App = () => {
   return (
@@ -31,6 +32,10 @@ const App = () => {
       {/* Admin dashboard, protected */}
       <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
+      </Route>
+
+      <Route element={<ProtectedRoute allowedRoles={["USER", "ORGANIZER", "ADMIN"]} />}>
+          <Route path="/events/:id" element={<EventDetails />} />
       </Route>
     </Routes>
   );

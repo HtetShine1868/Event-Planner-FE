@@ -1,40 +1,42 @@
 import React, { useEffect, useState } from 'react';
-import API from '../../../services/axiosInstance';
+import EventCard from '../../components/EventCard';
+import axiosInstance from '../../services/axiosInstance';
 
 const RegisteredEvents = () => {
   const [events, setEvents] = useState([]);
-  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    API.get('/registrations/my')  // your actual API endpoint
-      .then(res => {
-        if (Array.isArray(res.data)) {
-          setEvents(res.data);
-        } else {
-          setError('Invalid data format received');
-          setEvents([]);
-        }
+    axiosInstance
+      .get('/registrations/my') // ✅ Adjust this endpoint to match your backend
+      .then((res) => {
+        setEvents(res.data || []);
+        setLoading(false);
       })
-      .catch(err => {
-        setError('Failed to load registered events');
-        setEvents([]);
+      .catch((err) => {
+        console.error('Error fetching registered events:', err);
+        setLoading(false);
       });
   }, []);
 
-  if (error) return <p className="text-red-600">{error}</p>;
+  if (loading) {
+    return <p className="text-center text-gray-500 mt-6">Loading registered events...</p>;
+  }
+
+  if (events.length === 0) {
+    return <p className="text-center text-gray-500 mt-6">You haven’t registered for any events yet.</p>;
+  }
 
   return (
-    <div>
-      {Array.isArray(events) && events.length > 0 ? (
-        events.map(event => (
-          <div key={event.id} className="p-4 border mb-2 rounded shadow">
-            <h3 className="font-bold">{event.title}</h3>
-            {/* render more event details as you want */}
-          </div>
-        ))
-      ) : (
-        <p>No registered events found.</p>
-      )}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {events.map((event) => (
+        <EventCard
+          key={event.id}
+          event={event}
+          showRegister={true}
+          isRegistered={true} // ✅ This makes the button show "View Details"
+        />
+      ))}
     </div>
   );
 };
