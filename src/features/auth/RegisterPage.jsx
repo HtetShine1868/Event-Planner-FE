@@ -1,86 +1,117 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+// src/pages/RegisterPage.jsx
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { registerUser } from '../../services/authService'; // ✅ CORRECT
+import { Eye, EyeOff } from 'lucide-react';
 
 const RegisterPage = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const navigate = useNavigate();
+  const [form, setForm] = useState({ username: '', email: '', password: '' });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
-  const handleRegister = (e) => {
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+    setError('');
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (password !== confirmPassword) {
-      alert("Passwords do not match!");
-      return;
+    setLoading(true);
+    setError('');
+    try {
+      await registerUser(form);
+      navigate('/user-dashboard');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
     }
-
-    // TODO: Replace with real API call for registration
-    console.log("Register clicked", { email, password });
-
-    // Simulate successful registration -> redirect to login
-    alert("Registration successful! Please login.");
-    navigate("/");
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <form
-        onSubmit={handleRegister}
-        className="bg-white shadow-md rounded-lg p-8 w-full max-w-md"
-      >
-        <h2 className="text-2xl font-bold text-center text-blue-600 mb-6">
-          Register
-        </h2>
+    <div className="min-h-screen flex">
+      {/* Left side */}
+      <div className="hidden md:flex w-1/2 bg-gradient-to-tr from-blue-600 to-purple-700 items-center justify-center p-10 text-white">
+        <div>
+          <h1 className="text-5xl font-extrabold mb-6">Join EventPlanner Today!</h1>
+          <p className="text-lg max-w-md">
+            Discover and manage events seamlessly with our easy-to-use platform. Create your
+            account and start exploring!
+          </p>
+        </div>
+      </div>
 
-        <input
-          type="email"
-          placeholder="Email"
-          className="w-full mb-4 px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
+      {/* Right side */}
+      <div className="flex w-full md:w-1/2 justify-center items-center bg-white p-8">
+        <div className="max-w-md w-full">
+          <h2 className="text-3xl font-bold mb-6 text-center">Create Account</h2>
 
-        <input
-          type="password"
-          placeholder="Password"
-          className="w-full mb-4 px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          minLength={6}
-        />
+          {error && (
+            <div className="bg-red-100 text-red-700 p-3 mb-4 rounded">{error}</div>
+          )}
 
-        <input
-          type="password"
-          placeholder="Confirm Password"
-          className="w-full mb-6 px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          required
-          minLength={6}
-        />
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <input
+              type="text"
+              name="username"
+              placeholder="Username"
+              value={form.username}
+              onChange={handleChange}
+              required
+              className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
 
-        <button
-          type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
-        >
-          Register
-        </button>
+            <input
+              type="email"
+              name="email"
+              placeholder="Email"
+              value={form.email}
+              onChange={handleChange}
+              required
+              className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
 
-        <p className="mt-4 text-sm text-center">
-          Already have an account?{" "}
-          <span
-            onClick={() => navigate("/")}
-            className="text-blue-600 hover:underline cursor-pointer"
-          >
-            Login
-          </span>
-        </p>
-      </form>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                placeholder="Password"
+                value={form.password}
+                onChange={handleChange}
+                required
+                className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-3 text-gray-500 hover:text-gray-700"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-indigo-600 text-white py-3 rounded hover:bg-indigo-700 transition"
+            >
+              {loading ? 'Registering...' : 'Register'}
+            </button>
+          </form>
+
+          <p className="mt-6 text-center text-gray-600">
+            Already have an account?{' '}
+            <Link to="/login" className="text-indigo-600 font-semibold hover:underline">
+              Login
+            </Link>
+          </p>
+        </div>
+      </div>
     </div>
   );
 };
+
 
 export default RegisterPage;

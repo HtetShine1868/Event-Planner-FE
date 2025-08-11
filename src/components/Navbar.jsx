@@ -12,6 +12,8 @@ const Navibar = () => {
         
         <div className="text-2xl font-bold">
           <Link to="/">Event Planner</Link>
+          <Link to="/about" className="hover:text-gray-400">About</Link>
+
         </div>
 
         
