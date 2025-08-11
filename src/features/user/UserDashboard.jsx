@@ -64,17 +64,6 @@ const UserDashboard = () => {
       return null;
     }
   };
-    useEffect(() => {
-      API.get('/registrations/my')
-        .then(res => {
-          setRegisteredEvents(res.data.content || []);
-          const ids = new Set((res.data.content || []).map(event => event.id));
-          setRegisteredEventIds(ids);
-        })
-        .catch(err => {
-          console.error('Error fetching registered events:', err);
-        });
-    }, []);
 
 
   // Fetch events for a given tab and page
@@ -556,8 +545,8 @@ const fetchEvents = async (tab, page) => {
                 <EventCard
                   key={event.id}
                   event={event}
-                  isRegistered={registeredEventIds.has(event.id)} // true if registered for that event
-                />
+                  isRegistered={activeTab === 'registered' ? true : registeredEventIds.has(event.id)}
+    />
               ))}
             </div>
 

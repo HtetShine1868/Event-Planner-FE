@@ -1,13 +1,22 @@
-// src/features/feedback/feedbackAPI.js
 import axiosInstance from '../../services/axiosInstance';
 
-export const getFeedbackSummary = async (eventId) => {
-  const response = await axiosInstance.get(`/feedback/event/${eventId}/feedback-summary`);
+// Submit feedback for event
+export const submitFeedback = async (eventId, feedbackData) => {
+  // feedbackData = { rating: number, comment: string }
+  const response = await axiosInstance.post(`/feedbacks/${eventId}/feedback`, feedbackData);
   return response.data;
 };
 
-export const submitFeedback = async (feedbackData) => {
-  // feedbackData = { eventId, rating, comment }
-  const response = await axiosInstance.post('/feedback', feedbackData);
+// Get feedback summary for event
+export const getFeedbackSummary = async (eventId) => {
+  const response = await axiosInstance.get(`/feedbacks/${eventId}/feedback-summary`);
+  return response.data;
+};
+
+// Check if current user has submitted feedback for event
+export const getUserFeedback = async (eventId) => {
+  const response = await axiosInstance.get(`/feedbacks/${eventId}/my-feedback`);
+  // You may need to implement backend endpoint /feedbacks/{eventId}/feedback/my
+  // or adjust accordingly to get current user's feedback.
   return response.data;
 };
