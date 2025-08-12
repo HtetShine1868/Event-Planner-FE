@@ -1,30 +1,58 @@
 // src/context/AuthContext.jsx
-import { createContext, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import {jwtDecode} from 'jwt-decode';
 
-export const AuthContext = createContext();
+const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState(localStorage.getItem('token'));
-  const navigate = useNavigate();
+  const [token, setToken] = useState(() => localStorage.getItem('token'));
+  const [user, setUser] = useState(null);
 
+  // Decode token to get user info (including id)
+  useEffect(() => {
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        setUser({
+          id: decoded.id || decoded.userId || decoded.sub, // adjust according to your token payload
+          username: decoded.username,
+          email: decoded.email,
+          // add other user data if available in token
+        });
+      } catch (error) {
+        console.error('Invalid token');
+        setUser(null);
+        setToken(null);
+        localStorage.removeItem('token');
+      }
+    } else {
+      setUser(null);
+    }
+  }, [token]);
+
+  // Save token in localStorage
   const login = (newToken) => {
-    setToken(newToken);
     localStorage.setItem('token', newToken);
-    navigate('/userdashboard');
+    setToken(newToken);
   };
 
   const logout = () => {
-    setToken(null);
     localStorage.removeItem('token');
-    navigate('/login');
+    setToken(null);
+    setUser(null);
   };
 
-  const isAuthenticated = !!token;
-
   return (
-    <AuthContext.Provider value={{ token, login, logout, isAuthenticated }}>
+    <AuthContext.Provider value={{ token, user, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };

@@ -1,142 +1,67 @@
-import { useState } from "react";
-import "./UserProfileForm.css";
+// src/features/user/UserProfileForm.jsx
+import React, { useState } from 'react';
+import axiosInstance from '../services/axiosInstance';
+import { useNavigate } from 'react-router-dom';
+import { jwtDecode }from 'jwt-decode';
+import './UserProfileForm.css'; // keep your styling here
 
 const UserProfileForm = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    phone: "",
-    password: "",
-    confirmPassword: "",
-    role: "",
-    preferences: [],
+    fullName: '',
+    gender: '',
+    dateOfBirth: '',
+    address: '',
   });
 
-  const [errors, setErrors] = useState({});
-
-  const eventOptions = [
-    "Wedding", "Conference", "Concert", "Birthday",
-    "Corporate", "Festival", "Seminar", "Workshop"
-  ];
-
-  const validate = () => {
-    const newErrors = {};
-
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = "Full name is required.";
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
-    if (!emailRegex.test(formData.email)) {
-      newErrors.email = "Invalid email format.";
-    }
-
-    const phoneRegex = /^\d{7,15}$/;
-    if (!phoneRegex.test(formData.phone)) {
-      newErrors.phone = "Enter a valid phone number (7-15 digits).";
-    }
-
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^])[A-Za-z\d@$!%*?&#^]{8,}$/;
-    if (!passwordRegex.test(formData.password)) {
-      newErrors.password = "Password must be 8+ characters, include uppercase, lowercase, number, and special character.";
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match.";
-    }
-
-    if (!formData.role) {
-      newErrors.role = "Select a role.";
-    }
-
-    if (formData.preferences.length === 0) {
-      newErrors.preferences = "Select at least one event type.";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  const [error, setError] = useState(null);
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-
-    if (type === "checkbox") {
-      setFormData((prev) => ({
-        ...prev,
-        preferences: checked
-          ? [...prev.preferences, value]
-          : prev.preferences.filter((item) => item !== value),
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
-    }
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validate()) {
-      alert("Profile submitted successfully ✅");
-      console.log(formData);
+    setError(null);
+
+    try {
+      const token = localStorage.getItem('token');
+      const decoded = jwtDecode(token);
+      const userId = decoded.id; // ✅ uses numeric id
+
+      await axiosInstance.post(/user/${userId}/profile, formData);
+      navigate('/user-dashboard'); // ✅ redirect after submit
+    } catch (err) {
+      setError('Failed to create profile');
+      console.error(err);
     }
   };
 
   return (
-    <form className="profile-form" onSubmit={handleSubmit}>
-      <h2>Edit Profile</h2>
+    <div className="profile-form">
+      <h1>Complete Your Profile</h1>
+      <form onSubmit={handleSubmit}>
+        <label>Full Name</label>
+        <input name="fullName" value={formData.fullName} onChange={handleChange} required />
 
-      <label>Full Name:</label>
-      <input type="text" name="fullName" value={formData.fullName} onChange={handleChange} />
-      {errors.fullName && <span className="error">{errors.fullName}</span>}
+        <label>Gender</label>
+        <select name="gender" value={formData.gender} onChange={handleChange} required>
+          <option value="">Select</option>
+          <option value="MALE">Male</option>
+          <option value="FEMALE">Female</option>
+          <option value="OTHER">Other</option>
+        </select>
 
-      <label>Email:</label>
-      <input type="email" name="email" value={formData.email} onChange={handleChange} />
-      {errors.email && <span className="error">{errors.email}</span>}
+        <label>Date of Birth</label>
+        <input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} required />
 
-      <label>Phone Number:</label>
-      <input type="text" name="phone" value={formData.phone} onChange={handleChange} />
-      {errors.phone && <span className="error">{errors.phone}</span>}
+        <label>Address</label>
+        <input name="address" value={formData.address} onChange={handleChange} required />
 
-      <label>Password:</label>
-      <input type="password" name="password" value={formData.password} onChange={handleChange} />
-      {errors.password && <span className="error">{errors.password}</span>}
-
-      <label>Confirm Password:</label>
-      <input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} />
-      {errors.confirmPassword && <span className="error">{errors.confirmPassword}</span>}
-
-      <label>Role:</label>
-      <select name="role" value={formData.role} onChange={handleChange}>
-        <option value="">-- Select Role --</option>
-        <option value="attendee">Attendee</option>
-        <option value="organizer">Organizer</option>
-        <option value="vendor">Vendor</option>
-      </select>
-      {errors.role && <span className="error">{errors.role}</span>}
-
-      <label>Preferred Event Types:</label>
-      <div className="preferences-container">
-        {eventOptions.map((event) => (
-          <label
-            key={event}
-            className={`preference-option ${formData.preferences.includes(event) ? "selected" : ""}`}
-          >
-            <input
-              type="checkbox"
-              value={event}
-              checked={formData.preferences.includes(event)}
-              onChange={handleChange}
-            />
-            {event}
-          </label>
-        ))}
-      </div>
-      {errors.preferences && <span className="error">{errors.preferences}</span>}
-
-      <button type="submit">Submit</button>
-    </form>
+        {error && <div className="error">{error}</div>}
+        <button type="submit">Submit Profile</button>
+      </form>
+    </div>
   );
 };
 
