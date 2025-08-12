@@ -7,6 +7,7 @@ import RegisterPage from "./features/auth/RegisterPage";
 import EventDetails from './features/events/EventDetails';
 import OrganizerDashboard from "./features/organizer/OrganizerDashboard";
 import UserDashboard from './features/user/UserDashboard';
+import OrganizerApplicationForm from './organizer/OrganizerApplicationForm';
 import HomePage from "./pages/HomePage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import UserProfileForm from './user/UserProfileForm';
@@ -20,6 +21,7 @@ const App = () => {
 
       <Route path="/redirect" element={<RoleRedirect />} />
       <Route path="/user-profile-form" element={<UserProfileForm />} />
+      <Route path="/organizer-application-form" element={<OrganizerApplicationForm />} />
       <Route element={<ProtectedRoute allowedRoles={["USER"]} />}>
         <Route path="/user-dashboard" element={<UserDashboard />} />
       </Route>
