@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React, { useEffect, useState, useRef } from 'react';
 import API from '../../services/axiosInstance';
 import EventCard from '../../components/common/EventCard';
@@ -8,6 +9,39 @@ const UserDashboard = () => {
   const [trendingEvents, setTrendingEvents] = useState([]);
   const [registeredEvents, setRegisteredEvents] = useState([]);
   const [allEvents, setAllEvents] = useState([]);
+=======
+// src/features/user/UserDashboard.jsx
+import React, { useEffect, useState, useRef } from 'react';
+import API from '../../services/axiosInstance';
+import EventCard from '../../components/common/EventCard';
+import Navibar from '../../components/Navibar';
+import { useNavigate } from 'react-router-dom';
+import { jwtDecode }from 'jwt-decode';
+
+const PAGE_SIZE = 5;
+
+const UserDashboard = () => {
+  const [activeTab, setActiveTab] = useState('trending'); 
+
+  // Events and pagination states for each tab
+  const [trendingEvents, setTrendingEvents] = useState([]);
+  const [trendingPage, setTrendingPage] = useState(0);
+  const [trendingTotalPages, setTrendingTotalPages] = useState(1);
+
+  const [registeredEvents, setRegisteredEvents] = useState([]);
+  const [registeredEventIds, setRegisteredEventIds] = useState(new Set());
+  const [registeredPage, setRegisteredPage] = useState(0);
+  const [registeredTotalPages, setRegisteredTotalPages] = useState(1);
+
+  const [allEvents, setAllEvents] = useState([]);
+  const [allPage, setAllPage] = useState(0);
+  const [allTotalPages, setAllTotalPages] = useState(1);
+  
+  // Filters for All Events tab
+  const [filterCategoryId, setFilterCategoryId] = useState('');
+  const [filterLocation, setFilterLocation] = useState('');
+
+>>>>>>> main
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -16,6 +50,7 @@ const UserDashboard = () => {
   const profileRef = useRef(null);
 
   const [searchTerm, setSearchTerm] = useState('');
+<<<<<<< HEAD
 
   const navigate = useNavigate();
 
@@ -55,41 +90,314 @@ const UserDashboard = () => {
     fetchUser();
   }, []);
 
+=======
+  const navigate = useNavigate();
+  
+  const handleUnauthorized = () => {
+    alert("Session expired. Please login again.");
+    localStorage.removeItem('token');
+    navigate('/login');
+  };
+  // Edit mode states for profile
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    fullName: '',
+    gender: '',
+    dateOfBirth: '',
+    address: '',
+  });
+
+  // Extract userId from JWT token
+  const getUserIdFromToken = () => {
+    const token = localStorage.getItem('token');
+    if (!token) return null;
+    try {
+      const decoded = jwtDecode(token);
+      return decoded.id;
+    } catch {
+      return null;
+    }
+  };
+    useEffect(() => {
+      API.get('/registrations/my')
+        .then(res => {
+          setRegisteredEvents(res.data.content || []);
+          const ids = new Set((res.data.content || []).map(event => event.id));
+          setRegisteredEventIds(ids);
+        })
+        .catch(err => {
+          console.error('Error fetching registered events:', err);
+        });
+    }, []);
+
+
+  // Fetch events for a given tab and page
+const fetchEvents = async (tab, page) => {
+  setLoading(true);
+  try {
+    let res;
+    switch (tab) {
+      case 'trending':
+        res = await API.get(`/event/trending?page=${page}&size=${PAGE_SIZE}`);
+        setTrendingEvents(res.data.content || []);
+        setTrendingTotalPages(res.data.totalPages || 1);
+        setTrendingPage(page);
+        break;
+
+      case 'registered':
+        res = await API.get(`/registrations/my?page=${page}&size=${PAGE_SIZE}`);
+        setRegisteredEvents(res.data.content || []);
+        setRegisteredTotalPages(res.data.totalPages || 1);
+        setRegisteredPage(page);
+        break;
+
+      case 'all':
+        const params = {
+          page,
+          size: PAGE_SIZE,
+        };
+        if (filterCategoryId) params.categoryId = filterCategoryId;
+        if (filterLocation) params.location = filterLocation;
+
+        res = await API.get('/event/search', { params });
+        setAllEvents(res.data.content || []);
+        setAllTotalPages(res.data.totalPages || 1);
+        setAllPage(page);
+        break;
+
+      default:
+        break;
+    }
+    setError(null);
+  } catch (err) {
+    if (err.response && err.response.status === 401) {
+      handleUnauthorized();  // call your alert + redirect function here
+    } else {
+      console.error(`Error fetching ${tab} events:`, err);
+      setError(`Failed to load ${tab} events.`);
+    }
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+  // Fetch initial data on mount for trending and registered tabs
+  useEffect(() => {
+    fetchEvents('trending', 0);
+    fetchEvents('registered', 0);
+  }, []);
+
+  // Fetch all events when tab, page or filters change
+  useEffect(() => {
+    if (activeTab === 'all') {
+      fetchEvents('all', allPage);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, allPage, filterCategoryId, filterLocation]);
+
+  // Fetch user profile on mount
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      const userId = getUserIdFromToken();
+      if (!userId) {
+        console.error('User ID not found in token');
+        setError('User not authenticated.');
+        return;
+      }
+
+      setLoading(true);
+        try {
+          const res = await API.get(`/user/${userId}/profile`);
+          setUser(res.data);
+          setError(null);
+        } catch (err) {
+          if (err.response && err.response.status === 401) {
+            handleUnauthorized();
+          } else {
+            setError('Failed to fetch profile. Please refresh.');
+          }
+        } finally {
+          setLoading(false);
+        }
+    };
+
+    fetchUserProfile();
+  }, []);
+
+  // Initialize edit form when user data loads or changes
+  useEffect(() => {
+    if (user) {
+      setEditForm({
+        fullName: user.fullName || '',
+        gender: user.gender || '',
+        dateOfBirth: user.dateOfBirth ? user.dateOfBirth.slice(0, 10) : '',
+        address: user.address || '',
+      });
+    }
+  }, [user]);
+
+  // Close profile dropdown on outside click
+>>>>>>> main
   useEffect(() => {
     function handleClickOutside(event) {
       if (profileRef.current && !profileRef.current.contains(event.target)) {
         setProfileOpen(false);
+<<<<<<< HEAD
+=======
+        setIsEditing(false);
+>>>>>>> main
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+<<<<<<< HEAD
+=======
+  // Handle profile edit input change
+  const handleEditChange = (e) => {
+    setEditForm({ ...editForm, [e.target.name]: e.target.value });
+  };
+
+  // Save profile changes
+  const handleSaveProfile = async () => {
+    const userId = getUserIdFromToken();
+    if (!userId) {
+      alert('User not found.');
+      return;
+    }
+
+    // Prepare payload with gender uppercased
+    const payload = {
+      ...editForm,
+      gender: editForm.gender ? editForm.gender.toUpperCase() : null,
+    };
+
+    try {
+      setLoading(true);
+      await API.put(`/user/${userId}/profile`, payload);
+      setUser(payload);
+      setIsEditing(false);
+      setError(null);
+    } catch (err) {
+      console.error('Failed to save profile', err);
+      setError('Failed to save profile. Please try again.');
+      alert('Failed to save profile. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Cancel profile edit
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    if (user) {
+      setEditForm({
+        fullName: user.fullName || '',
+        gender: user.gender || '',
+        dateOfBirth: user.dateOfBirth ? user.dateOfBirth.slice(0, 10) : '',
+        address: user.address || '',
+      });
+    }
+  };
+
+  // Logout
+>>>>>>> main
   const handleLogout = () => {
     localStorage.removeItem('token');
     navigate('/login');
   };
 
+<<<<<<< HEAD
+=======
+  // Tabs config
+>>>>>>> main
   const tabs = [
     { id: 'trending', label: 'Trending Events' },
     { id: 'registered', label: 'Registered Events' },
     { id: 'all', label: 'All Events' },
   ];
 
+<<<<<<< HEAD
   let eventsToShow = [];
   if (activeTab === 'trending') eventsToShow = trendingEvents;
   else if (activeTab === 'registered') eventsToShow = registeredEvents;
   else if (activeTab === 'all') eventsToShow = allEvents;
 
+=======
+  // Select events and pagination info for active tab
+  let eventsToShow = [];
+  let currentPage = 0;
+  let totalPages = 1;
+  switch (activeTab) {
+    case 'trending':
+      eventsToShow = trendingEvents;
+      currentPage = trendingPage;
+      totalPages = trendingTotalPages;
+      break;
+    case 'registered':
+      eventsToShow = registeredEvents;
+      currentPage = registeredPage;
+      totalPages = registeredTotalPages;
+      break;
+    case 'all':
+      eventsToShow = allEvents;
+      currentPage = allPage;
+      totalPages = allTotalPages;
+      break;
+  }
+
+  // Filter events by search term (client-side)
+>>>>>>> main
   const filteredEvents = eventsToShow.filter(event =>
     event.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+<<<<<<< HEAD
   return (
     <div className="p-6 max-w-5xl mx-auto relative font-sans">
       {/* Header */}
       <header className="flex justify-between items-center mb-6 gap-4">
         <h1 className="text-3xl font-extrabold text-gray-900 tracking-wide flex-shrink-0">User Dashboard</h1>
+=======
+  // Pagination buttons for events
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+
+    const buttons = [];
+    for (let i = 0; i < totalPages; i++) {
+      buttons.push(
+        <button
+          key={i}
+          className={`px-3 py-1 rounded ${
+            i === currentPage ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+          onClick={() => fetchEvents(activeTab, i)}
+        >
+          {i + 1}
+        </button>
+      );
+    }
+    return (
+      <div className="flex justify-center gap-2 mt-4">
+        {buttons}
+      </div>
+    );
+  };
+
+  return (
+    <div className="p-6 max-w-5xl mx-auto relative font-sans">
+    
+      <Navibar />
+      
+
+      {/* Header */}
+      <header className="flex justify-between items-center mb-6 gap-4">
+        <h1 className="text-3xl font-extrabold text-gray-900 tracking-wide flex-shrink-0">
+          User Dashboard
+        </h1>
+>>>>>>> main
 
         {/* Right side: search bar + profile */}
         <div className="flex items-center space-x-4 flex-shrink-0">
@@ -121,6 +429,7 @@ const UserDashboard = () => {
                   : user?.username?.slice(0, 2).toUpperCase()) || 'US'}
               </div>
               <span className="font-medium">{user?.fullName || user?.username || 'User'}</span>
+<<<<<<< HEAD
 
               <svg
                 className={`w-5 h-5 text-white transform transition-transform duration-300 ${
@@ -134,6 +443,8 @@ const UserDashboard = () => {
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
+=======
+>>>>>>> main
             </button>
 
             {/* Dropdown */}
@@ -155,6 +466,7 @@ const UserDashboard = () => {
                   </div>
                 </div>
 
+<<<<<<< HEAD
                 <div className="grid grid-cols-2 gap-3 text-sm mb-5">
                   <div>
                     <p className="font-semibold text-gray-600">Username</p>
@@ -174,6 +486,118 @@ const UserDashboard = () => {
                   </div>
                 </div>
 
+=======
+                {/* Editable profile fields */}
+                <div className="mb-5 space-y-4 text-sm">
+                  <div className="flex justify-between items-center">
+                    <p className="font-semibold text-gray-600">Full Name</p>
+                    {!isEditing && (
+                      <button
+                        onClick={() => setIsEditing(true)}
+                        aria-label="Edit Full Name"
+                        title="Edit Profile"
+                        className="text-indigo-600 hover:text-indigo-800 focus:outline-none"
+                      >
+                        {/* Pencil SVG icon */}
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-5 w-5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-7-7l6 6"
+                          />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      name="fullName"
+                      value={editForm.fullName}
+                      onChange={handleEditChange}
+                      className="w-full border border-gray-300 rounded px-3 py-1"
+                    />
+                  ) : (
+                    <p>{user?.fullName || '-'}</p>
+                  )}
+
+                  <div className="flex justify-between items-center">
+                    <p className="font-semibold text-gray-600">Gender</p>
+                  </div>
+                  {isEditing ? (
+                    <select
+                      name="gender"
+                      value={editForm.gender}
+                      onChange={handleEditChange}
+                      className="w-full border border-gray-300 rounded px-3 py-1"
+                    >
+                      <option value="">Select Gender</option>
+                      <option value="MALE">Male</option>
+                      <option value="FEMALE">Female</option>
+                      <option value="OTHER">Other</option>
+                    </select>
+                  ) : (
+                    <p>{user?.gender ? user.gender.charAt(0).toUpperCase() + user.gender.slice(1).toLowerCase() : '-'}</p>
+                  )}
+
+                  <div className="flex justify-between items-center">
+                    <p className="font-semibold text-gray-600">Date of Birth</p>
+                  </div>
+                  {isEditing ? (
+                    <input
+                      type="date"
+                      name="dateOfBirth"
+                      value={editForm.dateOfBirth}
+                      onChange={handleEditChange}
+                      className="w-full border border-gray-300 rounded px-3 py-1"
+                    />
+                  ) : (
+                    <p>{user?.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString() : '-'}</p>
+                  )}
+
+                  <div className="flex justify-between items-center">
+                    <p className="font-semibold text-gray-600">Address</p>
+                  </div>
+                  {isEditing ? (
+                    <textarea
+                      name="address"
+                      value={editForm.address}
+                      onChange={handleEditChange}
+                      className="w-full border border-gray-300 rounded px-3 py-1 resize-none"
+                      rows={3}
+                    />
+                  ) : (
+                    <p>{user?.address || '-'}</p>
+                  )}
+                </div>
+
+                {/* Save and Cancel buttons */}
+                {isEditing && (
+                  <div className="flex space-x-3 mb-4">
+                    <button
+                      onClick={handleSaveProfile}
+                      className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded font-semibold"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={handleCancelEdit}
+                      className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 rounded font-semibold"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+
+                {/* Logout */}
+>>>>>>> main
                 <button
                   onClick={handleLogout}
                   className="w-full bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white py-2 rounded-xl font-semibold shadow-md transition-colors duration-300"
@@ -203,6 +627,41 @@ const UserDashboard = () => {
         ))}
       </nav>
 
+<<<<<<< HEAD
+=======
+      {/* Filters only for "All Events" tab */}
+      {activeTab === 'all' && (
+        <div className="flex flex-wrap gap-4 mb-6">
+          <select
+            value={filterCategoryId}
+            onChange={(e) => {
+              setFilterCategoryId(e.target.value);
+              setAllPage(0); // reset page on filter change
+            }}
+            className="border border-gray-300 rounded px-3 py-2 max-w-xs"
+          >
+            <option value="">All Categories</option>
+            {/* Example hardcoded categories, replace with dynamic if available */}
+            <option value="1">Music</option>
+            <option value="2">Sports</option>
+            <option value="3">Tech</option>
+            <option value="4">Art</option>
+          </select>
+
+          <input
+            type="text"
+            placeholder="Filter by location"
+            value={filterLocation}
+            onChange={(e) => {
+              setFilterLocation(e.target.value);
+              setAllPage(0);
+            }}
+            className="border border-gray-300 rounded px-3 py-2 max-w-xs"
+          />
+        </div>
+      )}
+
+>>>>>>> main
       {/* Events */}
       <section>
         {loading ? (
@@ -212,6 +671,7 @@ const UserDashboard = () => {
         ) : filteredEvents.length === 0 ? (
           <p className="text-center text-gray-500">No events found.</p>
         ) : (
+<<<<<<< HEAD
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {filteredEvents.map((event) => (
               <EventCard key={event.id} event={event} />
@@ -221,6 +681,26 @@ const UserDashboard = () => {
       </section>
 
       {/* Add fade-in animation styles */}
+=======
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {filteredEvents.map((event) => (
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  isRegistered={registeredEventIds.has(event.id)} // true if registered for that event
+                />
+              ))}
+            </div>
+
+            {/* Pagination controls */}
+            {renderPagination()}
+          </>
+        )}
+      </section>
+
+      {/* Fade-in animation styles */}
+>>>>>>> main
       <style>{`
         @keyframes fade-in {
           from { opacity: 0; transform: translateY(-10px); }

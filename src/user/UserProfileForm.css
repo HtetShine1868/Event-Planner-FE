@@ -1,0 +1,58 @@
+/* src/features/user/UserProfileForm.module.css */
+
+.profile-form {
+  max-width: 500px;
+  margin: 30px auto;
+  padding: 30px;
+  background-color: #e6f4fb;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  font-family: "Segoe UI", sans-serif;
+}
+
+.profile-form h1 {
+  text-align: center;
+  font-size: 1.35rem;
+  margin-bottom: 20px;
+  color: #1b07f4;
+}
+
+.profile-form label {
+  display: block;
+  margin: 10px 0 5px;
+  font-weight: 600;
+}
+
+.profile-form input,
+.profile-form select {
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  margin-bottom: 10px;
+}
+
+.profile-form .error {
+  color: #d32f2f;
+  font-size: 0.85rem;
+  margin-top: -8px;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.profile-form button {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #4f46e5, #8b5cf6);
+  color: #fbfcfe;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+  letter-spacing: 0.5px;
+}
+
+.profile-form button:hover {
+  background: linear-gradient(135deg, #4338ca, #7c3aed);
+}

@@ -2,7 +2,7 @@
 import axiosInstance from "./axiosInstance";
 
 // ✅ Login API call
-export const login = async (credentials) => {
+export const loginUser = async (credentials) => {
   console.log("Sending:", credentials);
   const response = await axiosInstance.post("/auth/login", credentials);
   return response.data;
