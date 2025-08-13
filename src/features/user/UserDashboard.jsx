@@ -6,7 +6,7 @@ import Navibar from '../../components/Navibar';
 import { useNavigate } from 'react-router-dom';
 import { jwtDecode }from 'jwt-decode';
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 6;
 
 const UserDashboard = () => {
   const [activeTab, setActiveTab] = useState('trending'); 
@@ -84,6 +84,12 @@ const fetchEvents = async (tab, page) => {
         setRegisteredEvents(res.data.content || []);
         setRegisteredTotalPages(res.data.totalPages || 1);
         setRegisteredPage(page);
+
+          setRegisteredEventIds(prevSet => {
+        const newSet = new Set(prevSet);
+        (res.data.content || []).forEach(event => newSet.add(event.id));
+        return newSet;
+      });
         break;
 
       case 'all':
@@ -115,7 +121,42 @@ const fetchEvents = async (tab, page) => {
     setLoading(false);
   }
 };
+const fetchAllRegisteredEventIds = async () => {
+  try {
+    let page = 0;
+    let totalPages = 1;
+    let allIds = new Set();
 
+    while (page < totalPages) {
+      const res = await API.get(`/registrations/my?page=${page}&size=10`);
+      const events = res.data.content || [];
+      events.forEach(e => allIds.add(e.id));
+      totalPages = res.data.totalPages || 1;
+      page++;
+    }
+    setRegisteredEventIds(allIds);
+  } catch (error) {
+    console.error("Error fetching all registered event IDs", error);
+  }
+};
+
+    const handleRegister = async (eventId) => {
+    try {
+      await API.post('/register', { eventId });  // Adjust endpoint & payload if needed
+      alert('Successfully registered for the event!');
+      // Update registeredEventIds to include the new event immediately
+      setRegisteredEventIds(prev => new Set(prev).add(eventId));
+
+      // Optionally: refetch registered events to keep data fresh
+      fetchEvents('registered', 0);
+
+      // If on "all" tab, refresh that too to reflect button state
+      if (activeTab === 'all') fetchEvents('all', allPage);
+    } catch (err) {
+      console.error('Registration failed:', err);
+      alert('Failed to register for the event. Please try again.');
+    }
+  };
 
   // Fetch initial data on mount for trending and registered tabs
   useEffect(() => {
@@ -130,7 +171,16 @@ const fetchEvents = async (tab, page) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, allPage, filterCategoryId, filterLocation]);
+    useEffect(() => {
+      if (activeTab === 'registered') {
+        setRegisteredEventIds(new Set());
+        fetchEvents('registered', 0);
+      }
+    }, [activeTab]);
 
+  useEffect(() => {
+  fetchAllRegisteredEventIds();
+}, []);
   // Fetch user profile on mount
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -545,8 +595,8 @@ const fetchEvents = async (tab, page) => {
                 <EventCard
                   key={event.id}
                   event={event}
-                  isRegistered={activeTab === 'registered' ? true : registeredEventIds.has(event.id)}
-    />
+                  isRegistered={registeredEventIds.has(event.id)} // Use full list, not just current page registered events
+                />
               ))}
             </div>
 
