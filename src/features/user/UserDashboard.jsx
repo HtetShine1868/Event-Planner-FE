@@ -1,4 +1,3 @@
-
 // src/features/user/UserDashboard.jsx
 import React, { useEffect, useState, useRef } from 'react';
 import API from '../../services/axiosInstance';
@@ -83,10 +82,10 @@ const fetchEvents = async (tab, page) => {
       case 'registered':
         res = await API.get(`/registrations/my?page=${page}&size=${PAGE_SIZE}`);
         setRegisteredEvents(res.data.content || []);
-        setRegisteredTotalPages(res.data.totalPages||  1);
+        setRegisteredTotalPages(res.data.totalPages || 1);
         setRegisteredPage(page);
 
-setRegisteredEventIds(prevSet => {
+          setRegisteredEventIds(prevSet => {
         const newSet = new Set(prevSet);
         (res.data.content || []).forEach(event => newSet.add(event.id));
         return newSet;
@@ -102,7 +101,7 @@ setRegisteredEventIds(prevSet => {
         if (filterLocation) params.location = filterLocation;
 
         res = await API.get('/event/search', { params });
-        setAllEvents(res.data.content||  []);
+        setAllEvents(res.data.content || []);
         setAllTotalPages(res.data.totalPages || 1);
         setAllPage(page);
         break;
@@ -223,7 +222,7 @@ const fetchAllRegisteredEventIds = async () => {
     }
   }, [user]);
 
-// Close profile dropdown on outside click
+  // Close profile dropdown on outside click
   useEffect(() => {
     function handleClickOutside(event) {
       if (profileRef.current && !profileRef.current.contains(event.target)) {
@@ -368,8 +367,7 @@ const fetchAllRegisteredEventIds = async () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600 max-w-xs w-full"
-
-/>
+          />
 
           {/* Profile Button */}
           <div className="relative" ref={profileRef}>
@@ -403,10 +401,10 @@ const fetchAllRegisteredEventIds = async () => {
                           .map((n) => n[0])
                           .join('')
                           .toUpperCase()
-                      : user?.username?.slice(0, 2).toUpperCase())  ||'US'}
+                      : user?.username?.slice(0, 2).toUpperCase()) || 'US'}
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold text-gray-900">{user?.fullName  ||user?.username || 'User'}</h3>
+                    <h3 className="text-xl font-semibold text-gray-900">{user?.fullName || user?.username || 'User'}</h3>
                     <p className="text-sm text-gray-500">{user?.email || 'No email provided'}</p>
                   </div>
                 </div>
@@ -449,11 +447,10 @@ const fetchAllRegisteredEventIds = async () => {
                       className="w-full border border-gray-300 rounded px-3 py-1"
                     />
                   ) : (
-                    <p>{user?.fullName||  '-'}</p>
+                    <p>{user?.fullName || '-'}</p>
                   )}
 
-
-<div className="flex justify-between items-center">
+                  <div className="flex justify-between items-center">
                     <p className="font-semibold text-gray-600">Gender</p>
                   </div>
                   {isEditing ? (
@@ -551,8 +548,7 @@ const fetchAllRegisteredEventIds = async () => {
         ))}
       </nav>
 
-Htet Aung Shine, [8/12/2025 3:38 PM]
-{/* Filters only for "All Events" tab */}
+      {/* Filters only for "All Events" tab */}
       {activeTab === 'all' && (
         <div className="flex flex-wrap gap-4 mb-6">
           <select

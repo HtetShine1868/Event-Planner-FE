@@ -1,26 +1,28 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
-// Import your API call function for feedback summary
 
 import FeedbackSummary from '../../features/feedback/feedbackSummary';
 import FeedbackForm from '../../features/feedback/feedbackForm';
 import { getFeedbackSummary } from '../../features/feedback/feedbackAPI';
+import API from '../../services/axiosInstance';
 
 const EventDetails = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Event data & registration status passed via navigation state
-  const { event, isRegistered } = location.state || {};
+  const { event, isRegistered: initialIsRegistered } = location.state || {};
 
   const [feedbackSummary, setFeedbackSummary] = useState(null);
+  const [isRegistered, setIsRegistered] = useState(initialIsRegistered || false);
 
-  // Fetch feedback summary when event changes
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+
   useEffect(() => {
-    if (!event) return;
-
     const loadFeedbackSummary = async () => {
+      if (!event) return;
       try {
         const summary = await getFeedbackSummary(event.id);
         setFeedbackSummary(summary);
@@ -28,11 +30,9 @@ const EventDetails = () => {
         console.error('Failed to load feedback summary:', err);
       }
     };
-
     loadFeedbackSummary();
   }, [event]);
 
-  // Early return if no event data available
   if (!event) {
     return (
       <div className="p-8 text-center text-gray-500">
@@ -64,9 +64,32 @@ const EventDetails = () => {
 
   const availableSeats = Math.max(0, capacity - registeredCount);
 
+  // Check if event has ended - can disable registration if needed
+  const eventEnded = dayjs().isAfter(dayjs(endTime));
+
+  // Handler for Register button
+  const handleRegister = async () => {
+    setLoading(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+    try {
+      const payload = { eventId: event.id };
+      const response = await API.post('/registrations/register', payload);
+      setSuccessMsg(response.data.message || 'Registration successful!');
+      setIsRegistered(true);
+    } catch (error) {
+      if (error.response) {
+        setErrorMsg(error.response.data.message || 'Failed to register.');
+      } else {
+        setErrorMsg('Failed to register. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg mt-8">
-
       {/* Back Button */}
       <button
         onClick={() => navigate(-1)}
@@ -85,7 +108,7 @@ const EventDetails = () => {
         Back to Events
       </button>
 
-      {/* Event Title */}
+      {/* Title */}
       <h1 className="text-3xl font-bold mb-2 text-gray-900">{title}</h1>
 
       {/* Category & Status */}
@@ -102,7 +125,7 @@ const EventDetails = () => {
         </span>
       </div>
 
-      {/* Date & Location */}
+      {/* Dates & Location */}
       <div className="flex flex-col md:flex-row md:justify-between text-gray-700 mb-6 space-y-2 md:space-y-0">
         <div>
           <strong className="block text-sm text-gray-600">Starts:</strong>
@@ -124,17 +147,21 @@ const EventDetails = () => {
         <p className="text-gray-700 whitespace-pre-line">{description || 'No description available.'}</p>
       </section>
 
-      {/* Capacity and registration info */}
+      {/* Capacity Info */}
       <div className="flex items-center space-x-4 mb-6">
-        <div className={`px-3 py-1 rounded-full font-semibold text-sm ${
-          availableSeats > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-        }`}>
+        <div
+          className={`px-3 py-1 rounded-full font-semibold text-sm ${
+            availableSeats > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+          }`}
+        >
           {availableSeats > 0 ? `${availableSeats} spots left` : 'Full'}
         </div>
-        <div className="text-sm text-gray-600">({registeredCount} / {capacity || 'N/A'} registered)</div>
+        <div className="text-sm text-gray-600">
+          ({registeredCount} / {capacity || 'N/A'} registered)
+        </div>
       </div>
 
-      {/* Organizer Info */}
+      {/* Organizer */}
       <div className="mb-8 flex items-center gap-3 text-gray-700">
         <div className="w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-lg select-none">
           {organizerUsername?.charAt(0).toUpperCase() || 'O'}
@@ -145,39 +172,43 @@ const EventDetails = () => {
         </div>
       </div>
 
-      {/* Feedback Summary Section */}
-      {feedbackSummary && (
-        <section className="mb-8 p-4 bg-gray-100 rounded">
-          <h3 className="text-lg font-semibold mb-2">Feedback Summary</h3>
-          <p><strong>Average Rating:</strong> {feedbackSummary.averageRating?.toFixed(1) || 'N/A'}</p>
-          <p><strong>Total Feedbacks:</strong> {feedbackSummary.totalFeedbacks || 0}</p>
-          <p><strong>Sentiment Analysis:</strong> {feedbackSummary.sentimentSummary || 'N/A'}</p>
-        </section>
-      )}
+      {/* Feedback Summary */}
+      {feedbackSummary && <FeedbackSummary summary={feedbackSummary} />}
 
-      {/* Action Button */}
-      <div>
+      {/* Register Button or Registered Text */}
+      <div className="mb-6">
         {isRegistered ? (
-          <button
-            onClick={() => alert('Here you can add feedback/rating functionality!')}
-            className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md transition"
-          >
-            Give Feedback & Rating
-          </button>
+          <div className="text-green-600 font-semibold">You are registered for this event.</div>
         ) : (
           <button
-            disabled={availableSeats === 0}
-            onClick={() => alert('Add registration logic here')}
-            className={`w-full py-3 font-semibold rounded-md transition ${
-              availableSeats > 0
-                ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
-                : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+            disabled={loading || availableSeats === 0 || eventEnded}
+            onClick={handleRegister}
+            className={`px-6 py-2 rounded font-semibold text-white ${
+              loading || availableSeats === 0 || eventEnded
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-indigo-600 hover:bg-indigo-700'
             }`}
           >
-            {availableSeats > 0 ? 'Register Now' : 'Registration Closed'}
+            {loading ? 'Registering...' : 'Register Now'}
           </button>
         )}
       </div>
+
+      {/* Success/Error Messages */}
+      {successMsg && <p className="text-green-600 mb-4">{successMsg}</p>}
+      {errorMsg && <p className="text-red-600 mb-4">{errorMsg}</p>}
+
+      {/* Feedback Form for Registered Users */}
+      {isRegistered && (
+        <div className="mt-8">
+          <FeedbackForm
+            eventId={event.id}
+            onFeedbackSubmitted={() => {
+              getFeedbackSummary(event.id).then(setFeedbackSummary);
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 };
