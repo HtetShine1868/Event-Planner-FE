@@ -1,147 +1,174 @@
 import { useState } from "react";
 
 const OrganizerApplicationForm = () => {
-  const [formData, setFormData] = useState({
-    fullName: "",
-    companyName: "",
-    contactNumber: "",
+  const [form, setForm] = useState({
+    organizationName: "",
     email: "",
+    description: "",
   });
 
-  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  const [submitted, setSubmitted] = useState(false);
 
-  const validate = () => {
-    let tempErrors = {};
+  // Validation rules
+  const isValidEmail = (email) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-    // Full Name validation
-    if (!formData.fullName.trim()) {
-      tempErrors.fullName = "Full name is required.";
-    } else if (formData.fullName.length < 3) {
-      tempErrors.fullName = "Name must be at least 3 characters.";
-    }
+  const errors = {
+    organizationName:
+      !form.organizationName.trim()
+        ? "Organization name is required."
+        : "",
+    email:
+      !form.email.trim()
+        ? "Email is required."
+        : !isValidEmail(form.email)
+        ? "Invalid email format."
+        : "",
+    description:
+      !form.description.trim()
+        ? "Description is required."
+        : "",
+  };
 
-    // Company Name validation
-    if (!formData.companyName.trim()) {
-      tempErrors.companyName = "Organization/Company name is required.";
-    }
+  const isValid = !Object.values(errors).some(Boolean);
 
-    // Contact Number validation
-    const phoneRegex = /^[0-9]{7,15}$/;
-    if (!formData.contactNumber.trim()) {
-      tempErrors.contactNumber = "Contact number is required.";
-    } else if (!phoneRegex.test(formData.contactNumber)) {
-      tempErrors.contactNumber = "Enter a valid phone number (7-15 digits).";
-    }
+  const handleChange = (e) => {
+    setForm((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!formData.email.trim()) {
-      tempErrors.email = "Email is required.";
-    } else if (!emailRegex.test(formData.email)) {
-      tempErrors.email = "Enter a valid email address.";
-    }
-
-    setErrors(tempErrors);
-    return Object.keys(tempErrors).length === 0;
+  const handleBlur = (e) => {
+    setTouched((prev) => ({
+      ...prev,
+      [e.target.name]: true,
+    }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (validate()) {
-      alert("Form submitted successfully!");
-    }
+    setTouched({
+      organizationName: true,
+      email: true,
+      description: true,
+    });
+    setSubmitted(true);
+    if (!isValid) return;
+    alert("Application submitted successfully!");
+    setForm({
+      organizationName: "",
+      email: "",
+      description: "",
+    });
+    setTouched({});
+    setSubmitted(false);
   };
 
+  // Utility for field styling
+  const fieldClass = (field) =>
+    `w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 ${
+      touched[field] && errors[field]
+        ? "border-red-500 focus:ring-red-300"
+        : "border-gray-300 focus:ring-blue-300"
+    } bg-white`;
+
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-purple-500 to-blue-500 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-500 to-blue-500">
       <form
+        className="w-full max-w-md bg-white/90 shadow-xl rounded-2xl px-8 py-10 backdrop-blur-md"
         onSubmit={handleSubmit}
-        className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md"
+        noValidate
       >
-        <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">
-          Organizer Application Form
+        <h2 className="text-3xl font-extrabold text-center mb-8 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+          Organizer Application
         </h2>
 
-        {/* Full Name */}
-        <div className="mb-4">
-          <label className="block font-semibold mb-1">Full Name</label>
-          <input
-            type="text"
-            className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 ${
-              errors.fullName ? "border-red-500" : "border-gray-300"
-            }`}
-            value={formData.fullName}
-            onChange={(e) =>
-              setFormData({ ...formData, fullName: e.target.value })
-            }
-          />
-          {errors.fullName && (
-            <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>
-          )}
-        </div>
-
-        {/* Organization/Company Name */}
-        <div className="mb-4">
-          <label className="block font-semibold mb-1">
-            Organization / Company Name
+        {/* Organization Name */}
+        <div className="mb-6">
+          <label
+            htmlFor="organizationName"
+            className="block text-gray-700 font-semibold mb-2"
+          >
+            Organization Name<span className="text-red-500">*</span>
           </label>
           <input
             type="text"
-            className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 ${
-              errors.companyName ? "border-red-500" : "border-gray-300"
-            }`}
-            value={formData.companyName}
-            onChange={(e) =>
-              setFormData({ ...formData, companyName: e.target.value })
-            }
+            id="organizationName"
+            name="organizationName"
+            className={fieldClass("organizationName")}
+            value={form.organizationName}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            required
+            autoComplete="organization"
           />
-          {errors.companyName && (
-            <p className="text-red-500 text-sm mt-1">{errors.companyName}</p>
+          {touched.organizationName && errors.organizationName && (
+            <p className="text-red-500 text-sm mt-1">
+              {errors.organizationName}
+            </p>
           )}
         </div>
 
-        {/* Contact Number */}
-        <div className="mb-4">
-          <label className="block font-semibold mb-1">Contact Number</label>
-          <input
-            type="text"
-            className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 ${
-              errors.contactNumber ? "border-red-500" : "border-gray-300"
-            }`}
-            value={formData.contactNumber}
-            onChange={(e) =>
-              setFormData({ ...formData, contactNumber: e.target.value })
-            }
-          />
-          {errors.contactNumber && (
-            <p className="text-red-500 text-sm mt-1">{errors.contactNumber}</p>
-          )}
-        </div>
-
-        {/* Email Address */}
+        {/* Email */}
         <div className="mb-6">
-          <label className="block font-semibold mb-1">Email Address</label>
+          <label
+            htmlFor="email"
+            className="block text-gray-700 font-semibold mb-2"
+          >
+            Email<span className="text-red-500">*</span>
+          </label>
           <input
             type="email"
-            className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 ${
-              errors.email ? "border-red-500" : "border-gray-300"
-            }`}
-            value={formData.email}
-            onChange={(e) =>
-              setFormData({ ...formData, email: e.target.value })
-            }
+            id="email"
+            name="email"
+            className={fieldClass("email")}
+            value={form.email}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            required
+            autoComplete="email"
           />
-          {errors.email && (
-            <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+          {touched.email && errors.email && (
+            <p className="text-red-500 text-sm mt-1">
+              {errors.email}
+            </p>
           )}
         </div>
 
-        {/* Submit Button */}
+        {/* Description */}
+        <div className="mb-8">
+          <label
+            htmlFor="description"
+            className="block text-gray-700 font-semibold mb-2"
+          >
+            Organization Description<span className="text-red-500">*</span>
+          </label>
+          <textarea
+            id="description"
+            name="description"
+            className={`${fieldClass("description")} min-h-[80px] resize-y`}
+            value={form.description}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            required
+          />
+          {touched.description && errors.description && (
+            <p className="text-red-500 text-sm mt-1">
+              {errors.description}
+            </p>
+          )}
+        </div>
+
         <button
           type="submit"
-          className="w-full bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:opacity-90 transition duration-300"
+          className={`w-full py-3 rounded-lg font-bold text-lg text-white bg-gradient-to-r from-purple-600 to-blue-600 shadow-md transition-all duration-200 hover:from-purple-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 ${
+            submitted && !isValid ? "opacity-70 cursor-not-allowed" : ""
+          }`}
+          disabled={submitted && !isValid}
         >
-          Submit
+          Submit Application
         </button>
       </form>
     </div>
