@@ -75,9 +75,10 @@ const OrganizerApplicationForm = () => {
     } bg-white`;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-500 to-blue-500">
+    <div className="min-h-screen flex items-center justify-center bg-white">
       <form
-        className="w-full max-w-md bg-white/90 shadow-xl rounded-2xl px-8 py-10 backdrop-blur-md"
+        className="w-full max-w-md shadow-xl rounded-2xl px-8 py-10"
+        style={{ backgroundColor: "#e9e6f8" }}
         onSubmit={handleSubmit}
         noValidate
       >
