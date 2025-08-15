@@ -1,16 +1,9 @@
-<<<<<<< HEAD
-// src/pages/RegisterPage.jsx
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { registerUser } from '../../services/authService'; // ✅ CORRECT
-import { Eye, EyeOff } from 'lucide-react';
-=======
+
 // src/features/auth/RegisterPage.jsx
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import axiosInstance from '../../services/axiosInstance';
->>>>>>> main
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -29,15 +22,10 @@ const RegisterPage = () => {
     setLoading(true);
     setError('');
     try {
-<<<<<<< HEAD
-      await registerUser(form);
-      navigate('/user-dashboard');
-=======
       const res = await axiosInstance.post('/auth/register', form);
       const token = res.data.token;
       localStorage.setItem('token', token);
       navigate('/user-profile-form'); // after register go to profile form
->>>>>>> main
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
@@ -52,12 +40,7 @@ const RegisterPage = () => {
         <div>
           <h1 className="text-5xl font-extrabold mb-6">Join EventPlanner Today!</h1>
           <p className="text-lg max-w-md">
-<<<<<<< HEAD
-            Discover and manage events seamlessly with our easy-to-use platform. Create your
-            account and start exploring!
-=======
             Discover and manage events seamlessly with our easy-to-use platform. Create your account and start exploring!
->>>>>>> main
           </p>
         </div>
       </div>
@@ -106,10 +89,7 @@ const RegisterPage = () => {
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-3 text-gray-500 hover:text-gray-700"
-<<<<<<< HEAD
-=======
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
->>>>>>> main
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
@@ -123,8 +103,7 @@ const RegisterPage = () => {
               {loading ? 'Registering...' : 'Register'}
             </button>
           </form>
-
-          <p className="mt-6 text-center text-gray-600">
+<p className="mt-6 text-center text-gray-600">
             Already have an account?{' '}
             <Link to="/login" className="text-indigo-600 font-semibold hover:underline">
               Login
@@ -135,6 +114,5 @@ const RegisterPage = () => {
     </div>
   );
 };
-
 
 export default RegisterPage;

@@ -1,15 +1,4 @@
-<<<<<<< HEAD
-import React, { useEffect, useState, useRef } from 'react';
-import API from '../../services/axiosInstance';
-import EventCard from '../../components/common/EventCard';
-import { useNavigate } from 'react-router-dom';
 
-const UserDashboard = () => {
-  const [activeTab, setActiveTab] = useState('trending');
-  const [trendingEvents, setTrendingEvents] = useState([]);
-  const [registeredEvents, setRegisteredEvents] = useState([]);
-  const [allEvents, setAllEvents] = useState([]);
-=======
 // src/features/user/UserDashboard.jsx
 import React, { useEffect, useState, useRef } from 'react';
 import API from '../../services/axiosInstance';
@@ -18,7 +7,7 @@ import Navibar from '../../components/Navibar';
 import { useNavigate } from 'react-router-dom';
 import { jwtDecode }from 'jwt-decode';
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 6;
 
 const UserDashboard = () => {
   const [activeTab, setActiveTab] = useState('trending'); 
@@ -41,7 +30,6 @@ const UserDashboard = () => {
   const [filterCategoryId, setFilterCategoryId] = useState('');
   const [filterLocation, setFilterLocation] = useState('');
 
->>>>>>> main
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -50,47 +38,6 @@ const UserDashboard = () => {
   const profileRef = useRef(null);
 
   const [searchTerm, setSearchTerm] = useState('');
-<<<<<<< HEAD
-
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const fetchEvents = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const [trendingRes, registeredRes, allRes] = await Promise.all([
-          API.get('/event/trending'),
-          API.get('/registrations/my'),
-          API.get('/event'),
-        ]);
-
-        setTrendingEvents(Array.isArray(trendingRes.data) ? trendingRes.data : []);
-        setRegisteredEvents(Array.isArray(registeredRes.data) ? registeredRes.data : []);
-        setAllEvents(Array.isArray(allRes.data) ? allRes.data : []);
-      } catch {
-        setError('Failed to fetch events');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchEvents();
-  }, []);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await API.get('/user/profile');
-        setUser(res.data);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    fetchUser();
-  }, []);
-
-=======
   const navigate = useNavigate();
   
   const handleUnauthorized = () => {
@@ -118,17 +65,6 @@ const UserDashboard = () => {
       return null;
     }
   };
-    useEffect(() => {
-      API.get('/registrations/my')
-        .then(res => {
-          setRegisteredEvents(res.data.content || []);
-          const ids = new Set((res.data.content || []).map(event => event.id));
-          setRegisteredEventIds(ids);
-        })
-        .catch(err => {
-          console.error('Error fetching registered events:', err);
-        });
-    }, []);
 
 
   // Fetch events for a given tab and page
@@ -147,8 +83,14 @@ const fetchEvents = async (tab, page) => {
       case 'registered':
         res = await API.get(`/registrations/my?page=${page}&size=${PAGE_SIZE}`);
         setRegisteredEvents(res.data.content || []);
-        setRegisteredTotalPages(res.data.totalPages || 1);
+        setRegisteredTotalPages(res.data.totalPages||  1);
         setRegisteredPage(page);
+
+setRegisteredEventIds(prevSet => {
+        const newSet = new Set(prevSet);
+        (res.data.content || []).forEach(event => newSet.add(event.id));
+        return newSet;
+      });
         break;
 
       case 'all':
@@ -160,7 +102,7 @@ const fetchEvents = async (tab, page) => {
         if (filterLocation) params.location = filterLocation;
 
         res = await API.get('/event/search', { params });
-        setAllEvents(res.data.content || []);
+        setAllEvents(res.data.content||  []);
         setAllTotalPages(res.data.totalPages || 1);
         setAllPage(page);
         break;
@@ -180,7 +122,42 @@ const fetchEvents = async (tab, page) => {
     setLoading(false);
   }
 };
+const fetchAllRegisteredEventIds = async () => {
+  try {
+    let page = 0;
+    let totalPages = 1;
+    let allIds = new Set();
 
+    while (page < totalPages) {
+      const res = await API.get(`/registrations/my?page=${page}&size=10`);
+      const events = res.data.content || [];
+      events.forEach(e => allIds.add(e.id));
+      totalPages = res.data.totalPages || 1;
+      page++;
+    }
+    setRegisteredEventIds(allIds);
+  } catch (error) {
+    console.error("Error fetching all registered event IDs", error);
+  }
+};
+
+    const handleRegister = async (eventId) => {
+    try {
+      await API.post('/register', { eventId });  // Adjust endpoint & payload if needed
+      alert('Successfully registered for the event!');
+      // Update registeredEventIds to include the new event immediately
+      setRegisteredEventIds(prev => new Set(prev).add(eventId));
+
+      // Optionally: refetch registered events to keep data fresh
+      fetchEvents('registered', 0);
+
+      // If on "all" tab, refresh that too to reflect button state
+      if (activeTab === 'all') fetchEvents('all', allPage);
+    } catch (err) {
+      console.error('Registration failed:', err);
+      alert('Failed to register for the event. Please try again.');
+    }
+  };
 
   // Fetch initial data on mount for trending and registered tabs
   useEffect(() => {
@@ -195,7 +172,16 @@ const fetchEvents = async (tab, page) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, allPage, filterCategoryId, filterLocation]);
+    useEffect(() => {
+      if (activeTab === 'registered') {
+        setRegisteredEventIds(new Set());
+        fetchEvents('registered', 0);
+      }
+    }, [activeTab]);
 
+  useEffect(() => {
+  fetchAllRegisteredEventIds();
+}, []);
   // Fetch user profile on mount
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -237,24 +223,18 @@ const fetchEvents = async (tab, page) => {
     }
   }, [user]);
 
-  // Close profile dropdown on outside click
->>>>>>> main
+// Close profile dropdown on outside click
   useEffect(() => {
     function handleClickOutside(event) {
       if (profileRef.current && !profileRef.current.contains(event.target)) {
         setProfileOpen(false);
-<<<<<<< HEAD
-=======
         setIsEditing(false);
->>>>>>> main
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-<<<<<<< HEAD
-=======
   // Handle profile edit input change
   const handleEditChange = (e) => {
     setEditForm({ ...editForm, [e.target.name]: e.target.value });
@@ -303,29 +283,18 @@ const fetchEvents = async (tab, page) => {
   };
 
   // Logout
->>>>>>> main
   const handleLogout = () => {
     localStorage.removeItem('token');
     navigate('/login');
   };
 
-<<<<<<< HEAD
-=======
   // Tabs config
->>>>>>> main
   const tabs = [
     { id: 'trending', label: 'Trending Events' },
     { id: 'registered', label: 'Registered Events' },
     { id: 'all', label: 'All Events' },
   ];
 
-<<<<<<< HEAD
-  let eventsToShow = [];
-  if (activeTab === 'trending') eventsToShow = trendingEvents;
-  else if (activeTab === 'registered') eventsToShow = registeredEvents;
-  else if (activeTab === 'all') eventsToShow = allEvents;
-
-=======
   // Select events and pagination info for active tab
   let eventsToShow = [];
   let currentPage = 0;
@@ -349,18 +318,10 @@ const fetchEvents = async (tab, page) => {
   }
 
   // Filter events by search term (client-side)
->>>>>>> main
   const filteredEvents = eventsToShow.filter(event =>
     event.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-<<<<<<< HEAD
-  return (
-    <div className="p-6 max-w-5xl mx-auto relative font-sans">
-      {/* Header */}
-      <header className="flex justify-between items-center mb-6 gap-4">
-        <h1 className="text-3xl font-extrabold text-gray-900 tracking-wide flex-shrink-0">User Dashboard</h1>
-=======
   // Pagination buttons for events
   const renderPagination = () => {
     if (totalPages <= 1) return null;
@@ -397,7 +358,6 @@ const fetchEvents = async (tab, page) => {
         <h1 className="text-3xl font-extrabold text-gray-900 tracking-wide flex-shrink-0">
           User Dashboard
         </h1>
->>>>>>> main
 
         {/* Right side: search bar + profile */}
         <div className="flex items-center space-x-4 flex-shrink-0">
@@ -408,7 +368,8 @@ const fetchEvents = async (tab, page) => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600 max-w-xs w-full"
-          />
+
+/>
 
           {/* Profile Button */}
           <div className="relative" ref={profileRef}>
@@ -429,22 +390,6 @@ const fetchEvents = async (tab, page) => {
                   : user?.username?.slice(0, 2).toUpperCase()) || 'US'}
               </div>
               <span className="font-medium">{user?.fullName || user?.username || 'User'}</span>
-<<<<<<< HEAD
-
-              <svg
-                className={`w-5 h-5 text-white transform transition-transform duration-300 ${
-                  profileOpen ? 'rotate-180' : ''
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-=======
->>>>>>> main
             </button>
 
             {/* Dropdown */}
@@ -458,35 +403,14 @@ const fetchEvents = async (tab, page) => {
                           .map((n) => n[0])
                           .join('')
                           .toUpperCase()
-                      : user?.username?.slice(0, 2).toUpperCase()) || 'US'}
+                      : user?.username?.slice(0, 2).toUpperCase())  ||'US'}
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold text-gray-900">{user?.fullName || user?.username || 'User'}</h3>
+                    <h3 className="text-xl font-semibold text-gray-900">{user?.fullName  ||user?.username || 'User'}</h3>
                     <p className="text-sm text-gray-500">{user?.email || 'No email provided'}</p>
                   </div>
                 </div>
 
-<<<<<<< HEAD
-                <div className="grid grid-cols-2 gap-3 text-sm mb-5">
-                  <div>
-                    <p className="font-semibold text-gray-600">Username</p>
-                    <p>{user?.username || '-'}</p>
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-600">Gender</p>
-                    <p>{user?.gender || '-'}</p>
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-600">Date of Birth</p>
-                    <p>{user?.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString() : '-'}</p>
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-600">Address</p>
-                    <p>{user?.address || '-'}</p>
-                  </div>
-                </div>
-
-=======
                 {/* Editable profile fields */}
                 <div className="mb-5 space-y-4 text-sm">
                   <div className="flex justify-between items-center">
@@ -525,10 +449,11 @@ const fetchEvents = async (tab, page) => {
                       className="w-full border border-gray-300 rounded px-3 py-1"
                     />
                   ) : (
-                    <p>{user?.fullName || '-'}</p>
+                    <p>{user?.fullName||  '-'}</p>
                   )}
 
-                  <div className="flex justify-between items-center">
+
+<div className="flex justify-between items-center">
                     <p className="font-semibold text-gray-600">Gender</p>
                   </div>
                   {isEditing ? (
@@ -597,7 +522,6 @@ const fetchEvents = async (tab, page) => {
                 )}
 
                 {/* Logout */}
->>>>>>> main
                 <button
                   onClick={handleLogout}
                   className="w-full bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white py-2 rounded-xl font-semibold shadow-md transition-colors duration-300"
@@ -627,9 +551,8 @@ const fetchEvents = async (tab, page) => {
         ))}
       </nav>
 
-<<<<<<< HEAD
-=======
-      {/* Filters only for "All Events" tab */}
+Htet Aung Shine, [8/12/2025 3:38 PM]
+{/* Filters only for "All Events" tab */}
       {activeTab === 'all' && (
         <div className="flex flex-wrap gap-4 mb-6">
           <select
@@ -661,7 +584,6 @@ const fetchEvents = async (tab, page) => {
         </div>
       )}
 
->>>>>>> main
       {/* Events */}
       <section>
         {loading ? (
@@ -671,24 +593,13 @@ const fetchEvents = async (tab, page) => {
         ) : filteredEvents.length === 0 ? (
           <p className="text-center text-gray-500">No events found.</p>
         ) : (
-<<<<<<< HEAD
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {filteredEvents.map((event) => (
-              <EventCard key={event.id} event={event} />
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Add fade-in animation styles */}
-=======
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {filteredEvents.map((event) => (
                 <EventCard
                   key={event.id}
                   event={event}
-                  isRegistered={registeredEventIds.has(event.id)} // true if registered for that event
+                  isRegistered={registeredEventIds.has(event.id)} // Use full list, not just current page registered events
                 />
               ))}
             </div>
@@ -700,7 +611,6 @@ const fetchEvents = async (tab, page) => {
       </section>
 
       {/* Fade-in animation styles */}
->>>>>>> main
       <style>{`
         @keyframes fade-in {
           from { opacity: 0; transform: translateY(-10px); }
