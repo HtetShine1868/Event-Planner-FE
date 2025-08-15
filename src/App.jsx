@@ -1,5 +1,6 @@
 import { Route, Routes } from "react-router-dom";
 
+import ChatbotUI from "./components/ChatbotUI"; // ✅ Import your chatbot
 import RoleRedirect from "./components/RoleRedirect";
 import AdminDashboard from "./features/admin/AdminDashboard";
 import LoginPage from "./features/auth/LoginPage";
@@ -22,6 +23,10 @@ const App = () => {
       <Route path="/redirect" element={<RoleRedirect />} />
       <Route path="/user-profile-form" element={<UserProfileForm />} />
       <Route path="/organizer-application-form" element={<OrganizerApplicationForm />} />
+
+      {/* Chatbot route */}
+      <Route path="/chatbot" element={<ChatbotUI />} /> {/* ✅ Added route */}
+
       <Route element={<ProtectedRoute allowedRoles={["USER"]} />}>
         <Route path="/user-dashboard" element={<UserDashboard />} />
       </Route>
@@ -37,7 +42,7 @@ const App = () => {
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={["USER", "ORGANIZER", "ADMIN"]} />}>
-          <Route path="/events/:id" element={<EventDetails />} />
+        <Route path="/events/:id" element={<EventDetails />} />
       </Route>
     </Routes>
   );
