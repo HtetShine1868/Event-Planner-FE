@@ -1,3 +1,4 @@
+
 // src/features/auth/RegisterPage.jsx
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -102,8 +103,7 @@ const RegisterPage = () => {
               {loading ? 'Registering...' : 'Register'}
             </button>
           </form>
-
-          <p className="mt-6 text-center text-gray-600">
+<p className="mt-6 text-center text-gray-600">
             Already have an account?{' '}
             <Link to="/login" className="text-indigo-600 font-semibold hover:underline">
               Login

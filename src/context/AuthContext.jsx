@@ -14,7 +14,7 @@ export const AuthProvider = ({ children }) => {
       try {
         const decoded = jwtDecode(token);
         setUser({
-          id: decoded.id || decoded.userId || decoded.sub, // adjust according to your token payload
+          id: decoded.id  decoded.userId  decoded.sub, // adjust according to your token payload
           username: decoded.username,
           email: decoded.email,
           // add other user data if available in token
