@@ -59,7 +59,7 @@ const EventCard = ({ event, showRegister = true, isRegistered = false }) => {
         {/* Capacity Info */}
         <div className="text-sm mt-2">
           <span className={`inline-block px-2 py-1 rounded-md text-xs font-medium ${availableSeats > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-            {availableSeats > 0 ? `${availableSeats} spots left` : 'Full'}
+            {availableSeats > 0 ? `${availableSeats} spots left `: 'Full'}
           </span>
           <span className="ml-2 text-gray-500">({registeredCount}/{capacity} registered)</span>
         </div>

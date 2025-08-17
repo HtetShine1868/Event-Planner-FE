@@ -13,6 +13,7 @@ const UserDashboard = () => {
 
   // Events and pagination states for each tab
   const [trendingEvents, setTrendingEvents] = useState([]);
+    const [trendingCategory, setTrendingCategory] = useState('');
   const [trendingPage, setTrendingPage] = useState(0);
   const [trendingTotalPages, setTrendingTotalPages] = useState(1);
 
@@ -65,62 +66,63 @@ const UserDashboard = () => {
     }
   };
 
-
-  // Fetch events for a given tab and page
-const fetchEvents = async (tab, page) => {
+const fetchEvents = async (tab, page = 0) => {
   setLoading(true);
   try {
     let res;
-    switch (tab) {
-      case 'trending':
-        res = await API.get(`/event/trending?page=${page}&size=${PAGE_SIZE}`);
-        setTrendingEvents(res.data.content || []);
-        setTrendingTotalPages(res.data.totalPages || 1);
-        setTrendingPage(page);
-        break;
 
-      case 'registered':
-        res = await API.get(`/registrations/my?page=${page}&size=${PAGE_SIZE}`);
+    switch (tab) {
+      case 'trending': {
+          const params = { limit: PAGE_SIZE }; 
+          if (trendingCategory) params.categoryId = trendingCategory; // 
+          res = await API.get("/event/trending", { params });
+
+          setTrendingEvents(res.data || []);
+          setTrendingPage(page);
+        break;
+      }
+
+      case 'registered': {
+        const registeredParams = { page, size: PAGE_SIZE };
+        res = await API.get('/registrations/my', { params: registeredParams });
         setRegisteredEvents(res.data.content || []);
         setRegisteredTotalPages(res.data.totalPages || 1);
         setRegisteredPage(page);
 
-          setRegisteredEventIds(prevSet => {
-        const newSet = new Set(prevSet);
-        (res.data.content || []).forEach(event => newSet.add(event.id));
-        return newSet;
-      });
+        setRegisteredEventIds(prevSet => {
+          const newSet = new Set(prevSet);
+          (res.data.content || []).forEach(event => newSet.add(event.id));
+          return newSet;
+        });
         break;
+      }
 
-      case 'all':
-        const params = {
-          page,
-          size: PAGE_SIZE,
-        };
-        if (filterCategoryId) params.categoryId = filterCategoryId;
-        if (filterLocation) params.location = filterLocation;
+      case 'all': {
+        const allParams = { page, size: PAGE_SIZE };
+        if (filterCategoryId) allParams.categoryId = filterCategoryId;
+        if (filterLocation) allParams.location = filterLocation;
 
-        res = await API.get('/event/search', { params });
+        res = await API.get('/event/search', { params: allParams });
         setAllEvents(res.data.content || []);
         setAllTotalPages(res.data.totalPages || 1);
         setAllPage(page);
         break;
+      }
 
       default:
         break;
     }
+
     setError(null);
   } catch (err) {
-    if (err.response && err.response.status === 401) {
-      handleUnauthorized();  // call your alert + redirect function here
-    } else {
-      console.error(`Error fetching ${tab} events:`, err);
-      setError(`Failed to load ${tab} events.`);
-    }
+    console.error(`Error fetching ${tab} events:`, err);
+    setError(`Failed to load ${tab} events.`);
   } finally {
     setLoading(false);
   }
 };
+
+
 const fetchAllRegisteredEventIds = async () => {
   try {
     let page = 0;
@@ -163,6 +165,10 @@ const fetchAllRegisteredEventIds = async () => {
     fetchEvents('trending', 0);
     fetchEvents('registered', 0);
   }, []);
+
+  useEffect(() => {
+  fetchEvents(activeTab, 0);
+}, [activeTab, filterCategoryId, filterLocation]);
 
   // Fetch all events when tab, page or filters change
   useEffect(() => {
@@ -547,6 +553,74 @@ const fetchAllRegisteredEventIds = async () => {
           </button>
         ))}
       </nav>
+      {activeTab === 'trending' && (
+        <div className="mb-6">
+          {/* Banner / Attention Text */}
+          <p className="text-indigo-600 font-semibold mb-3">
+            🔥 Check out the most popular events happening now!
+          </p>
+
+          {/* Category Filter above carousel */}
+          <div className="flex gap-3 mb-3 items-center">
+            <select
+              value={trendingCategory}
+              onChange={(e) => {
+                setTrendingCategory(e.target.value);
+                fetchEvents('trending', 0); // re-fetch trending events with selected category
+              }}
+              className="border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+                <option value="">All Categories</option>
+                <option value="1">Music</option>
+                <option value="2">Sports</option>
+                <option value="3">Tech</option>
+               
+            </select>
+            
+          </div>
+
+          {/* Horizontal Carousel */}
+          <div className="flex gap-4 overflow-x-auto scrollbar-hide py-2">
+            {trendingEvents.length === 0 ? (
+              <p className="text-gray-500 ml-3">No trending events found.</p>
+            ) : (
+              trendingEvents.map(event => (
+                <div
+                  key={event.id}
+                  className="min-w-[260px] bg-white shadow-lg rounded-lg overflow-hidden transform transition hover:scale-105"
+                >
+                  {/* Gradient header instead of image */}
+                  <div className="h-32 bg-gradient-to-r from-indigo-400 to-purple-500 flex items-center justify-center text-white text-lg font-bold text-center p-3">
+                    {event.title}
+                  </div>
+                  <div className="p-3 space-y-1">
+                    <p className="text-sm text-gray-500">
+                      📅 {new Date(event.startTime).toLocaleDateString()}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      📍 {event.location || 'Online'}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      👥 {event.registeredCount || 0} registered
+                    </p>
+                    <button
+                      onClick={() => handleRegister(event.id)}
+                      disabled={registeredEventIds.has(event.id)}
+                      className={`mt-3 w-full py-2 rounded-lg font-semibold transition ${
+                        registeredEventIds.has(event.id)
+                          ? 'bg-gray-300 text-gray-700 cursor-not-allowed'
+                          : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                      }`}
+                    >
+                      {registeredEventIds.has(event.id) ? 'Registered' : 'Register'}
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Filters only for "All Events" tab */}
       {activeTab === 'all' && (
@@ -590,15 +664,17 @@ const fetchAllRegisteredEventIds = async () => {
           <p className="text-center text-gray-500">No events found.</p>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {filteredEvents.map((event) => (
-                <EventCard
-                  key={event.id}
-                  event={event}
-                  isRegistered={registeredEventIds.has(event.id)} // Use full list, not just current page registered events
-                />
-              ))}
-            </div>
+         {activeTab !== 'trending' && (
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    {filteredEvents.map((event) => (
+      <EventCard
+        key={event.id}
+        event={event}
+        isRegistered={registeredEventIds.has(event.id)}
+      />
+    ))}
+  </div>
+)}
 
             {/* Pagination controls */}
             {renderPagination()}
