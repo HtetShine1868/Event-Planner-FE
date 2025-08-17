@@ -72,15 +72,14 @@ const fetchEvents = async (tab, page = 0) => {
     let res;
 
     switch (tab) {
-      case 'trending': {
-          const params = { limit: PAGE_SIZE }; 
-          if (trendingCategory) params.categoryId = trendingCategory; // 
-          res = await API.get("/event/trending", { params });
-
-          setTrendingEvents(res.data || []);
-          setTrendingPage(page);
-        break;
-      }
+        case 'trending': {
+            const params = { limit: PAGE_SIZE };
+            if (trendingCategory) params.categoryId = trendingCategory; // pass category
+            res = await API.get("/event/trending", { params });
+            setTrendingEvents(res.data || []);
+            setTrendingPage(page);
+            break;
+        }
 
       case 'registered': {
         const registeredParams = { page, size: PAGE_SIZE };
@@ -603,15 +602,20 @@ const fetchAllRegisteredEventIds = async () => {
               </p>
               <button
                 onClick={() =>
-                  navigate('/event-details', { state: { event, isRegistered: registeredEventIds.has(event.id) } })
+                  navigate(`/events/${event.id}`, {
+                    state: {
+                      event, // still pass event so page doesn't need another fetch
+                      isRegistered: registeredEventIds.has(event.id),
+                    },
+                  })
                 }
                 className={`mt-3 w-full py-2 rounded-lg font-semibold transition ${
                   registeredEventIds.has(event.id)
-                    ? 'bg-gray-300 text-gray-700 cursor-not-allowed'
-                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                    ? "bg-gray-300 text-gray-700 cursor-not-allowed"
+                    : "bg-indigo-600 text-white hover:bg-indigo-700"
                 }`}
               >
-                {registeredEventIds.has(event.id) ? 'Registered' : 'Register'}
+                {registeredEventIds.has(event.id) ? "Registered" : "Register"}
               </button>
             </div>
           </div>
