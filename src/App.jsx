@@ -1,15 +1,17 @@
-import { Routes, Route } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 
+import ChatbotUI from "./components/ChatbotUI"; // ✅ Import your chatbot
+import RoleRedirect from "./components/RoleRedirect";
+import AdminDashboard from "./features/admin/AdminDashboard";
 import LoginPage from "./features/auth/LoginPage";
 import RegisterPage from "./features/auth/RegisterPage";
-import UserDashboard from './features/user/UserDashboard';
-import UserProfileForm from './user/UserProfileForm';
-import HomePage from "./pages/HomePage";
-import RoleRedirect from "./components/RoleRedirect";
-import OrganizerDashboard from "./features/organizer/OrganizerDashboard";
-import AdminDashboard from "./features/admin/AdminDashboard";
-import ProtectedRoute from "./routes/ProtectedRoute";
 import EventDetails from './features/events/EventDetails';
+import OrganizerDashboard from "./features/organizer/OrganizerDashboard";
+import UserDashboard from './features/user/UserDashboard';
+import OrganizerApplicationForm from './organizer/OrganizerApplicationForm';
+import HomePage from "./pages/HomePage";
+import ProtectedRoute from "./routes/ProtectedRoute";
+import UserProfileForm from './user/UserProfileForm';
 
 const App = () => {
   return (
@@ -20,6 +22,11 @@ const App = () => {
 
       <Route path="/redirect" element={<RoleRedirect />} />
       <Route path="/user-profile-form" element={<UserProfileForm />} />
+      <Route path="/organizer-application-form" element={<OrganizerApplicationForm />} />
+
+      {/* Chatbot route */}
+      <Route path="/chatbot" element={<ChatbotUI />} /> {/* ✅ Added route */}
+
       <Route element={<ProtectedRoute allowedRoles={["USER"]} />}>
         <Route path="/user-dashboard" element={<UserDashboard />} />
       </Route>
@@ -35,7 +42,7 @@ const App = () => {
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={["USER", "ORGANIZER", "ADMIN"]} />}>
-          <Route path="/events/:id" element={<EventDetails />} />
+        <Route path="/events/:id" element={<EventDetails />} />
       </Route>
     </Routes>
   );

@@ -1,6 +1,6 @@
 // src/context/AuthContext.jsx
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import {jwtDecode} from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
+import { createContext, useContext, useEffect, useState } from 'react';
 
 const AuthContext = createContext(null);
 
@@ -14,7 +14,7 @@ export const AuthProvider = ({ children }) => {
       try {
         const decoded = jwtDecode(token);
         setUser({
-          id: decoded.id  decoded.userId  decoded.sub, // adjust according to your token payload
+          id: decoded.id  || decoded.userId || decoded.sub, // adjust according to your token payload
           username: decoded.username,
           email: decoded.email,
           // add other user data if available in token

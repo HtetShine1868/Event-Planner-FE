@@ -1,8 +1,8 @@
 // src/features/user/UserProfileForm.jsx
-import React, { useState } from 'react';
-import axiosInstance from '../services/axiosInstance';
+import { jwtDecode } from 'jwt-decode';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { jwtDecode }from 'jwt-decode';
+import axiosInstance from '../services/axiosInstance';
 import './UserProfileForm.css'; // keep your styling here
 
 const UserProfileForm = () => {
