@@ -1,9 +1,9 @@
 // src/features/auth/LoginPage.jsx
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { jwtDecode } from 'jwt-decode';
 import { Eye, EyeOff } from 'lucide-react';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import axiosInstance from '../../services/axiosInstance';
-import { jwtDecode }from 'jwt-decode';
 
 
 const LoginPage = () => {
