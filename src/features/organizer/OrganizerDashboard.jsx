@@ -2,7 +2,10 @@
 import React, { useEffect, useState } from 'react';
 import API from '../../services/axiosInstance';
 import Navibar from '../../components/Navibar';
+import { useNavigate } from "react-router-dom";  // ✅ import navigate
+import { jwtDecode } from "jwt-decode"; 
 import OrganizerEventCard from '../../components/common/OrganizerEventCard';
+import { getApprovedEvents } from '../../services/eventService';
 
 const PAGE_SIZE = 6;
 
@@ -17,7 +20,8 @@ const OrganizerDashboard = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
+  const [approvedEvents, setApprovedEvents] = useState([]);
+  const navigate = useNavigate();
   const [formData, setFormData] = useState(initialFormData());
   const [formMode, setFormMode] = useState('create'); // "create" or "edit"
   const [feedback, setFeedback] = useState({ type: '', message: '' });
@@ -75,6 +79,27 @@ const OrganizerDashboard = () => {
       setLoading(false);
     }
   };
+      
+     useEffect(() => {
+  if (activeTab === "analysis") {
+    const organizerId = getOrganizerId();
+    if (organizerId) {
+      fetchApprovedEvents(page, organizerId);
+    }
+  }
+}, [activeTab, page]);
+
+const fetchApprovedEvents = async (page, organizerId) => {
+  try {
+    const res = await API.get(
+      `/event/myevent?organizerId=${organizerId}&status=APPROVED&page=${page}&size=${PAGE_SIZE}`
+    );
+    setApprovedEvents(res.data.content || []);
+    setTotalPages(res.data.totalPages || 1);
+  } catch (error) {
+    console.error("Error fetching approved events", error);
+  }
+};
 
   const fetchCategories = async () => {
     try {
@@ -89,6 +114,8 @@ const OrganizerDashboard = () => {
     fetchCategories();
     fetchMyEvents(0);
   }, []);
+
+ 
 
   useEffect(() => {
     const timer = setTimeout(() => fetchMyEvents(0), 500);
@@ -115,6 +142,23 @@ const OrganizerDashboard = () => {
       setFeedback({ type: 'error', message: 'Failed to save event.' });
     }
   };
+
+      useEffect(() => {
+        if (activeTab === 'analysis') {
+          const fetch = async () => {
+            try {
+              const organizerId = getOrganizerId();
+              const events = await getApprovedEvents(organizerId);
+              console.log('Approved Events:', events); // Debugging
+              setApprovedEvents(events);
+            } catch (err) {
+              console.error('Failed to fetch approved events', err);
+            }
+          };
+          fetch();
+        }
+      }, [activeTab]);
+
 
   const startEdit = (event) => {
     setFormData({
@@ -144,30 +188,42 @@ const OrganizerDashboard = () => {
       alert('Failed to delete event.');
     }
   };
-
   return (
-    <div className="p-6 max-w-5xl mx-auto font-sans">
+  <div className="p-6 max-w-5xl mx-auto font-sans">
       <Navibar />
       <h1 className="text-3xl font-extrabold mb-6">Organizer Dashboard</h1>
 
       {/* Tabs */}
-      <div className="flex gap-4 mb-6">
-        <button
-          className={`px-4 py-2 rounded ${activeTab === 'myEvents' ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}
-          onClick={() => { setActiveTab('myEvents'); setFormMode('create'); setFormData(initialFormData()); }}
-        >
-          My Events
-        </button>
-        <button
-          className={`px-4 py-2 rounded ${activeTab === 'form' && formMode === 'create' ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}
-          onClick={() => { setActiveTab('form'); setFormMode('create'); setFormData(initialFormData()); }}
-        >
-          Create Event
-        </button>
+      <div className="flex gap-2 mb-8 border-b border-gray-200">
+        {[
+          { key: "myEvents", label: "My Events", color: "indigo" },
+          { key: "form", label: "Create Event", color: "indigo" },
+          { key: "analysis", label: "Analysis", color: "blue" },
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            className={`px-5 py-2 text-sm font-medium rounded-t-lg transition-colors duration-200
+              ${
+                activeTab === tab.key
+                  ? `bg-${tab.color}-600 text-white shadow`
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            onClick={() => {
+              if (tab.key === "form") {
+                setFormMode("create");
+                setFormData(initialFormData());
+              }
+              setActiveTab(tab.key);
+              setPage(0);
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {/* My Events Tab */}
-      {activeTab === 'myEvents' && (
+      {activeTab === "myEvents" && (
         <>
           {/* Filters */}
           <div className="flex flex-wrap gap-4 mb-6">
@@ -194,7 +250,9 @@ const OrganizerDashboard = () => {
             >
               <option value="">All Categories</option>
               {categories.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
               ))}
             </select>
           </div>
@@ -208,7 +266,7 @@ const OrganizerDashboard = () => {
             <p className="text-center text-gray-500">No events found.</p>
           ) : (
             <div className="space-y-4">
-              {myEvents.map(event => (
+              {myEvents.map((event) => (
                 <OrganizerEventCard
                   key={event.id}
                   event={event}
@@ -216,17 +274,35 @@ const OrganizerDashboard = () => {
                   onDelete={handleDelete}
                 />
               ))}
+
+              {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex justify-center gap-2 mt-6">
+                <div className="flex justify-center items-center gap-2 mt-6">
+                  <button
+                    disabled={page === 0}
+                    onClick={() => setPage((p) => p - 1)}
+                    className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50 hover:bg-gray-300 transition"
+                  >
+                    Prev
+                  </button>
                   {[...Array(totalPages)].map((_, i) => (
                     <button
                       key={i}
-                      className={`px-3 py-1 rounded ${i === page ? 'bg-indigo-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}`}
-                      onClick={() => fetchMyEvents(i)}
+                      className={`px-3 py-1 rounded ${
+                        i === page ? "bg-indigo-600 text-white" : "bg-gray-200 hover:bg-gray-300"
+                      }`}
+                      onClick={() => setPage(i)}
                     >
                       {i + 1}
                     </button>
                   ))}
+                  <button
+                    disabled={page + 1 >= totalPages}
+                    onClick={() => setPage((p) => p + 1)}
+                    className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50 hover:bg-gray-300 transition"
+                  >
+                    Next
+                  </button>
                 </div>
               )}
             </div>
@@ -362,6 +438,94 @@ const OrganizerDashboard = () => {
             </button>
           </form>
         </div>
+      )}
+      
+   {activeTab === "analysis" && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {approvedEvents.map((event) => (
+              <div
+                key={event.id}
+                className="bg-white rounded-2xl shadow-md hover:shadow-lg transition p-5 border border-gray-100"
+              >
+                <h2 className="text-xl font-bold text-gray-800 mb-3">{event.title}</h2>
+                <p className="text-gray-600 mb-4 line-clamp-2">{event.description}</p>
+
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm text-gray-500">📍 Location</p>
+                    <p className="font-medium">{event.location}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm text-gray-500">👥 Total Attendees</p>
+                    <p className="font-medium">{event.totalAttendees}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm text-gray-500">🎯 Most Common Age Group</p>
+                    <p className="font-medium">{event.mostCommonAgeGroup}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">⚧ Gender Distribution</p>
+                    <div className="space-y-2">
+                      {event.genderDistribution?.map((g, i) => (
+                        <div
+                          key={i}
+                          className="flex justify-between items-center bg-gray-50 rounded-lg px-3 py-2"
+                        >
+                          <span className="capitalize">{g.gender}</span>
+                          <span className="text-sm text-gray-600">
+                            {g.count} ({g.percentage}%)
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => navigate(`/organizer/analysis/${event.id}`)}
+                  className="mt-4 w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition"
+                >
+                  View Full Analysis
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2 mt-6">
+              <button
+                disabled={page === 0}
+                onClick={() => setPage((p) => p - 1)}
+                className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50 hover:bg-gray-300 transition"
+              >
+                Prev
+              </button>
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i}
+                  className={`px-3 py-1 rounded ${
+                    i === page ? "bg-blue-600 text-white" : "bg-gray-200 hover:bg-gray-300"
+                  }`}
+                  onClick={() => setPage(i)}
+                >
+                  {i + 1}
+                </button>
+              ))}
+              <button
+                disabled={page + 1 >= totalPages}
+                onClick={() => setPage((p) => p + 1)}
+                className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50 hover:bg-gray-300 transition"
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

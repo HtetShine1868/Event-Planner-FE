@@ -10,6 +10,9 @@ import OrganizerDashboard from "./features/organizer/OrganizerDashboard";
 import AdminDashboard from "./features/admin/AdminDashboard";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import EventDetails from './features/events/EventDetails';
+import AnalysisPage from './features/organizer/AnalysisPage';
+
+
 
 const App = () => {
   return (
@@ -27,6 +30,7 @@ const App = () => {
       {/* Organizer dashboard, protected */}
       <Route element={<ProtectedRoute allowedRoles={["ORGANIZER"]} />}>
         <Route path="/organizer-dashboard" element={<OrganizerDashboard />} />
+      <Route path="/organizer/analysis/:eventId" element={<AnalysisPage />} />
       </Route>
 
       {/* Admin dashboard, protected */}

@@ -553,74 +553,73 @@ const fetchAllRegisteredEventIds = async () => {
           </button>
         ))}
       </nav>
-      {activeTab === 'trending' && (
-        <div className="mb-6">
-          {/* Banner / Attention Text */}
-          <p className="text-indigo-600 font-semibold mb-3">
-            🔥 Check out the most popular events happening now!
-          </p>
+  {activeTab === 'trending' && (
+  <div className="mb-6">
+    {/* Banner / Attention Text */}
+    <p className="text-indigo-600 font-semibold mb-3">
+      🔥 Check out the most popular events happening now!
+    </p>
 
-          {/* Category Filter above carousel */}
-          <div className="flex gap-3 mb-3 items-center">
-            <select
-              value={trendingCategory}
-              onChange={(e) => {
-                setTrendingCategory(e.target.value);
-                fetchEvents('trending', 0); // re-fetch trending events with selected category
-              }}
-              className="border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-                <option value="">All Categories</option>
-                <option value="1">Music</option>
-                <option value="2">Sports</option>
-                <option value="3">Tech</option>
-               
-            </select>
-            
-          </div>
+    {/* Category Filter above carousel */}
+    <div className="flex gap-3 mb-3 items-center">
+      <select
+        value={trendingCategory}
+        onChange={(e) => {
+          setTrendingCategory(e.target.value);
+          fetchEvents('trending', 0); // re-fetch trending events with selected category
+        }}
+        className="border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+      >
+        <option value="">All Categories</option>
+        <option value="1">Music</option>
+        <option value="2">Sports</option>
+        <option value="3">Tech</option>
+      </select>
+    </div>
 
-          {/* Horizontal Carousel */}
-          <div className="flex gap-4 overflow-x-auto scrollbar-hide py-2">
-            {trendingEvents.length === 0 ? (
-              <p className="text-gray-500 ml-3">No trending events found.</p>
-            ) : (
-              trendingEvents.map(event => (
-                <div
-                  key={event.id}
-                  className="min-w-[260px] bg-white shadow-lg rounded-lg overflow-hidden transform transition hover:scale-105"
-                >
-                  {/* Gradient header instead of image */}
-                  <div className="h-32 bg-gradient-to-r from-indigo-400 to-purple-500 flex items-center justify-center text-white text-lg font-bold text-center p-3">
-                    {event.title}
-                  </div>
-                  <div className="p-3 space-y-1">
-                    <p className="text-sm text-gray-500">
-                      📅 {new Date(event.startTime).toLocaleDateString()}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      📍 {event.location || 'Online'}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      👥 {event.registeredCount || 0} registered
-                    </p>
-                    <button
-                      onClick={() => handleRegister(event.id)}
-                      disabled={registeredEventIds.has(event.id)}
-                      className={`mt-3 w-full py-2 rounded-lg font-semibold transition ${
-                        registeredEventIds.has(event.id)
-                          ? 'bg-gray-300 text-gray-700 cursor-not-allowed'
-                          : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                      }`}
-                    >
-                      {registeredEventIds.has(event.id) ? 'Registered' : 'Register'}
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
+    {/* Horizontal Carousel */}
+    <div className="flex gap-4 overflow-x-auto scrollbar-hide py-2">
+      {trendingEvents.length === 0 ? (
+        <p className="text-gray-500 ml-3">No trending events found.</p>
+      ) : (
+        trendingEvents.map((event) => (
+          <div
+            key={event.id}
+            className="min-w-[260px] bg-white shadow-lg rounded-lg overflow-hidden transform transition hover:scale-105"
+          >
+            {/* Gradient header instead of image */}
+            <div className="h-32 bg-gradient-to-r from-indigo-400 to-purple-500 flex items-center justify-center text-white text-lg font-bold text-center p-3">
+              {event.title}
+            </div>
+            <div className="p-3 space-y-1">
+              <p className="text-sm text-gray-500">
+                📅 {new Date(event.startTime).toLocaleDateString()}
+              </p>
+              <p className="text-sm text-gray-500">
+                📍 {event.location || 'Online'}
+              </p>
+              <p className="text-sm text-gray-500">
+                👥 {event.registeredCount || 0} registered
+              </p>
+              <button
+                onClick={() =>
+                  navigate('/event-details', { state: { event, isRegistered: registeredEventIds.has(event.id) } })
+                }
+                className={`mt-3 w-full py-2 rounded-lg font-semibold transition ${
+                  registeredEventIds.has(event.id)
+                    ? 'bg-gray-300 text-gray-700 cursor-not-allowed'
+                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                }`}
+              >
+                {registeredEventIds.has(event.id) ? 'Registered' : 'Register'}
+              </button>
+            </div>
           </div>
-        </div>
+        ))
       )}
+    </div>
+  </div>
+)}
 
       {/* Filters only for "All Events" tab */}
       {activeTab === 'all' && (
@@ -665,17 +664,16 @@ const fetchAllRegisteredEventIds = async () => {
         ) : (
           <>
          {activeTab !== 'trending' && (
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-    {filteredEvents.map((event) => (
-      <EventCard
-        key={event.id}
-        event={event}
-        isRegistered={registeredEventIds.has(event.id)}
-      />
-    ))}
-  </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {filteredEvents.map((event) => (
+              <EventCard
+                key={event.id}
+                event={event}
+                isRegistered={registeredEventIds.has(event.id)}
+              />
+            ))}
+          </div>
 )}
-
             {/* Pagination controls */}
             {renderPagination()}
           </>
