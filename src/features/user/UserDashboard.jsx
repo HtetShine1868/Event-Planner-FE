@@ -5,6 +5,7 @@ import EventCard from '../../components/common/EventCard';
 import Navibar from '../../components/Navibar';
 import { useNavigate } from 'react-router-dom';
 import { jwtDecode }from 'jwt-decode';
+import OrganizerApplicationForm from "../../organizer/OrganizerApplicationForm";
 
 const PAGE_SIZE = 6;
 
@@ -297,6 +298,7 @@ const fetchAllRegisteredEventIds = async () => {
     { id: 'trending', label: 'Trending Events' },
     { id: 'registered', label: 'Registered Events' },
     { id: 'all', label: 'All Events' },
+      { id: 'organizer', label: 'Organizer Application' },
   ];
 
   // Select events and pagination info for active tab
@@ -622,6 +624,20 @@ const fetchAllRegisteredEventIds = async () => {
         ))
       )}
     </div>
+  </div>
+)}
+{activeTab === 'organizer' && (
+  <div className="max-w-3xl mx-auto bg-white shadow-xl rounded-2xl p-8">
+    <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+      Apply to Become an Organizer 🚀
+    </h2>
+
+    {/* Organizer Application Form */}
+    <OrganizerApplicationForm />
+
+    <p className="text-sm text-gray-500 mt-6 text-center">
+      We’ll review your application and get back to you via email.
+    </p>
   </div>
 )}
 
