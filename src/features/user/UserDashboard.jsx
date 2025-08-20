@@ -6,6 +6,7 @@ import Navibar from '../../components/Navibar';
 import { useNavigate } from 'react-router-dom';
 import { jwtDecode }from 'jwt-decode';
 import OrganizerApplicationForm from "../../organizer/OrganizerApplicationForm";
+import ChatbotUI from "../../components/ChatbotUI";
 
 const PAGE_SIZE = 6;
 
@@ -184,10 +185,11 @@ const fetchAllRegisteredEventIds = async () => {
       }
     }, [activeTab]);
 
+  
   useEffect(() => {
   fetchAllRegisteredEventIds();
 }, []);
-  // Fetch user profile on mount
+  // Fetch user prcd eventplofile on mount
   useEffect(() => {
     const fetchUserProfile = async () => {
       const userId = getUserIdFromToken();
@@ -626,20 +628,7 @@ const fetchAllRegisteredEventIds = async () => {
     </div>
   </div>
 )}
-{activeTab === 'organizer' && (
-  <div className="max-w-3xl mx-auto bg-white shadow-xl rounded-2xl p-8">
-    <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-      Apply to Become an Organizer 🚀
-    </h2>
 
-    {/* Organizer Application Form */}
-    <OrganizerApplicationForm />
-
-    <p className="text-sm text-gray-500 mt-6 text-center">
-      We’ll review your application and get back to you via email.
-    </p>
-  </div>
-)}
 
       {/* Filters only for "All Events" tab */}
       {activeTab === 'all' && (
@@ -672,6 +661,20 @@ const fetchAllRegisteredEventIds = async () => {
           />
         </div>
       )}
+      {activeTab === 'organizer' && (
+  <div className="max-w-3xl mx-auto bg-white shadow-xl rounded-2xl p-8">
+    <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+      Apply to Become an Organizer 🚀
+    </h2>
+
+    {/* Organizer Application Form */}
+    <OrganizerApplicationForm />
+
+    <p className="text-sm text-gray-500 mt-6 text-center">
+      We’ll review your application and get back to you via email.
+    </p>
+  </div>
+)}
 
       {/* Events */}
       <section>
@@ -710,6 +713,7 @@ const fetchAllRegisteredEventIds = async () => {
           animation: fade-in 0.3s ease forwards;
         }
       `}</style>
+     <ChatbotUI />
     </div>
   );
 };

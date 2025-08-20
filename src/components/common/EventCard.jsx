@@ -63,6 +63,11 @@ const EventCard = ({ event, showRegister = true, isRegistered = false }) => {
           </span>
           <span className="ml-2 text-gray-500">({registeredCount}/{capacity} registered)</span>
         </div>
+        {event.feedbackSummary && (
+            <p className="text-sm text-gray-600">
+              😊 {event.feedbackSummary.positivePercent?.toFixed(1)}% | 😐 {event.feedbackSummary.neutralPercent?.toFixed(1)}% | 😡 {event.feedbackSummary.negativePercent?.toFixed(1)}%
+            </p>
+          )}
 
         {/* Organizer */}
         <div className="flex items-center mt-4 gap-3">

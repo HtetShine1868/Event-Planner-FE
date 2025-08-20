@@ -1,4 +1,5 @@
 import { useState } from "react";
+import API from "../services/axiosInstance";
 
 const ChatbotUI = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -6,69 +7,60 @@ const ChatbotUI = () => {
     { sender: "bot", text: "Hey! 👋 How can I help you with your event?" }
   ]);
   const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (input.trim() === "") return;
 
     // Add user message
     const newMessages = [...messages, { sender: "user", text: input }];
     setMessages(newMessages);
-
-    // Bot reply
-    let botReply = "Got it! I’ll help you with that.";
-    if (input.toLowerCase().includes("book")) {
-      botReply = "Sure! 📅 Let's get your event booked.";
-    } else if (input.toLowerCase().includes("venue")) {
-      botReply = "I have some great venues for you! 🏛️";
-    }
-
-    setTimeout(() => {
-      setMessages((prev) => [...prev, { sender: "bot", text: botReply }]);
-    }, 500);
-
     setInput("");
+    setLoading(true);
+
+    try {
+      const response = await API.post("/chatbot", { question: input });
+      const botReply = response.data.answer || "Sorry, I didn't understand that.";
+      setMessages((prev) => [...prev, { sender: "bot", text: botReply }]);
+    } catch (error) {
+      setMessages((prev) => [
+        ...prev,
+        { sender: "bot", text: "Something went wrong. Please try again." }
+      ]);
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <>
-      {/* Floating Button */}
-     {!isOpen && (
-  <div
-    style={{
-      position: "fixed",
-      bottom: "20px",
-      right: "20px",
-      background: "linear-gradient(135deg, #4f46e5, #6366f1)",
-      color: "#fff",
-      width: "70px",
-      height: "70px",
-      borderRadius: "50%",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      cursor: "pointer",
-      boxShadow: "0 8px 20px rgba(79,70,229,0.4), 0 0 20px rgba(79,70,229,0.2)",
-      fontSize: "28px",
-      fontWeight: "bold",
-      transition: "transform 0.2s, box-shadow 0.2s",
-      zIndex: 1000,
-    }}
-    onClick={() => setIsOpen(true)}
-    onMouseEnter={(e) => {
-      e.currentTarget.style.transform = "scale(1.15)";
-      e.currentTarget.style.boxShadow =
-        "0 12px 24px rgba(79,70,229,0.5), 0 0 24px rgba(79,70,229,0.3)";
-    }}
-    onMouseLeave={(e) => {
-      e.currentTarget.style.transform = "scale(1)";
-      e.currentTarget.style.boxShadow =
-        "0 8px 20px rgba(79,70,229,0.4), 0 0 20px rgba(79,70,229,0.2)";
-    }}
-  >
-    🤖
-  </div>
-)}
-      {/* Chatbox */}
+      {!isOpen && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: "20px",
+            right: "20px",
+            background: "linear-gradient(135deg, #4f46e5, #6366f1)",
+            color: "#fff",
+            width: "70px",
+            height: "70px",
+            borderRadius: "50%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            boxShadow: "0 8px 20px rgba(79,70,229,0.4), 0 0 20px rgba(79,70,229,0.2)",
+            fontSize: "28px",
+            fontWeight: "bold",
+            zIndex: 1000,
+          }}
+          onClick={() => setIsOpen(true)}
+        >
+          🤖
+        </div>
+      )}
+
       {isOpen && (
         <div
           style={{
@@ -82,7 +74,8 @@ const ChatbotUI = () => {
             boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
             display: "flex",
             flexDirection: "column",
-            overflow: "hidden"
+            overflow: "hidden",
+            zIndex: 1000,
           }}
         >
           {/* Header */}
@@ -94,14 +87,11 @@ const ChatbotUI = () => {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              fontWeight: "bold"
+              fontWeight: "bold",
             }}
           >
             Event Planner Chat
-            <span
-              style={{ cursor: "pointer" }}
-              onClick={() => setIsOpen(false)}
-            >
+            <span style={{ cursor: "pointer" }} onClick={() => setIsOpen(false)}>
               ✖
             </span>
           </div>
@@ -112,7 +102,7 @@ const ChatbotUI = () => {
               flex: 1,
               padding: "10px",
               overflowY: "auto",
-              backgroundColor: "#f9f9f9"
+              backgroundColor: "#f9f9f9",
             }}
           >
             {messages.map((msg, index) => (
@@ -120,27 +110,28 @@ const ChatbotUI = () => {
                 key={index}
                 style={{
                   display: "flex",
-                  justifyContent:
-                    msg.sender === "user" ? "flex-end" : "flex-start",
-                  marginBottom: "8px"
+                  justifyContent: msg.sender === "user" ? "flex-end" : "flex-start",
+                  marginBottom: "8px",
                 }}
               >
                 <div
                   style={{
-                    backgroundColor:
-                      msg.sender === "user" ? "#4f46e5" : "#e5e7eb",
+                    backgroundColor: msg.sender === "user" ? "#4f46e5" : "#e5e7eb",
                     color: msg.sender === "user" ? "#fff" : "#000",
                     padding: "8px 12px",
                     borderRadius: "16px",
                     maxWidth: "70%",
                     fontSize: "14px",
-                    lineHeight: "1.4"
+                    lineHeight: "1.4",
                   }}
                 >
                   {msg.text}
                 </div>
               </div>
             ))}
+            {loading && (
+              <div style={{ fontStyle: "italic", color: "#555" }}>Typing...</div>
+            )}
           </div>
 
           {/* Input Bar */}
@@ -150,7 +141,7 @@ const ChatbotUI = () => {
               alignItems: "center",
               backgroundColor: "#f2f2f2",
               padding: "8px",
-              borderTop: "1px solid #ddd"
+              borderTop: "1px solid #ddd",
             }}
           >
             <input
@@ -165,11 +156,9 @@ const ChatbotUI = () => {
                 backgroundColor: "transparent",
                 outline: "none",
                 fontSize: "14px",
-                padding: "6px"
+                padding: "6px",
               }}
             />
-
-            {/* Messenger Arrow Send Button */}
             <button
               onClick={handleSend}
               style={{
@@ -178,20 +167,9 @@ const ChatbotUI = () => {
                 borderRadius: "8px",
                 padding: "8px",
                 cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center"
               }}
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="#2563EB"
-                width="20px"
-                height="20px"
-              >
-                <path d="M2 21l21-9L2 3v7l15 2-15 2v7z" />
-              </svg>
+              ➤
             </button>
           </div>
         </div>

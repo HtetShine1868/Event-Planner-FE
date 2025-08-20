@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Mail, User, FileText, CheckCircle, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
+import API from "../services/axiosInstance"; // make sure the path is correct
 
 const OrganizerApplicationForm = ({ user }) => {
   const [formData, setFormData] = useState({
@@ -23,13 +24,10 @@ const OrganizerApplicationForm = ({ user }) => {
     setStatus(null);
 
     try {
-      const res = await fetch("/api/organizer-applications", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+      // Replace fetch with axiosInstance
+      const res = await API.post("/organizer-applications", formData);
 
-      if (res.ok) {
+      if (res.status === 200 || res.status === 201) {
         setStatus("success");
         setFormData({
           userId: user?.id || "",
@@ -41,6 +39,7 @@ const OrganizerApplicationForm = ({ user }) => {
         setStatus("error");
       }
     } catch (err) {
+      console.error("Error submitting application:", err);
       setStatus("error");
     } finally {
       setLoading(false);

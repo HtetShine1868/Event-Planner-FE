@@ -37,6 +37,7 @@ const RegisterPage = () => {
     }
   };
 
+  //Verify OTP
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     setLoading(true);

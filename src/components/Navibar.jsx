@@ -76,7 +76,7 @@ const Navibar = () => {
                 className="block px-4 py-2 hover:bg-blue-700 transition-colors"
                 onClick={() => setDropdownOpen(false)}
               >
-                Events
+                Event
               </Link>
             </li>
             <li>
@@ -88,15 +88,16 @@ const Navibar = () => {
                 Search
               </Link>
             </li>
-            <li>
-              <Link
-                to="/about"
-                className="block px-4 py-2 hover:bg-blue-700 transition-colors"
-                onClick={() => setDropdownOpen(false)}
-              >
-                About
-              </Link>
-            </li>
+              <li>
+                <Link
+                  to="/about"
+                  onClick={() => setDropdownOpen(false)}
+                  className="block px-4 py-2 rounded-md hover:bg-indigo-600 hover:text-white transition-colors"
+                >
+                  About
+                </Link>
+              </li>
+
             <li>
               <button
                 onClick={() => {
