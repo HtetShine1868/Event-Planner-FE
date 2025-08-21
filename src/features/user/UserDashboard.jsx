@@ -300,7 +300,7 @@ const fetchAllRegisteredEventIds = async () => {
     { id: 'trending', label: 'Trending Events' },
     { id: 'registered', label: 'Registered Events' },
     { id: 'all', label: 'All Events' },
-      { id: 'organizer', label: 'Organizer Application' },
+    { id: 'organizer', label: 'Organizer Application' },
   ];
 
   // Select events and pagination info for active tab
@@ -556,20 +556,20 @@ const fetchAllRegisteredEventIds = async () => {
           </button>
         ))}
       </nav>
-  {activeTab === 'trending' && (
+{activeTab === "trending" && (
   <div className="mb-6">
-    {/* Banner / Attention Text */}
+    {/* Banner */}
     <p className="text-indigo-600 font-semibold mb-3">
       🔥 Check out the most popular events happening now!
     </p>
 
-    {/* Category Filter above carousel */}
+    {/* Category Filter */}
     <div className="flex gap-3 mb-3 items-center">
       <select
         value={trendingCategory}
         onChange={(e) => {
           setTrendingCategory(e.target.value);
-          fetchEvents('trending', 0); // re-fetch trending events with selected category
+          fetchEvents("trending", 0); // re-fetch trending events
         }}
         className="border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
       >
@@ -585,49 +585,67 @@ const fetchAllRegisteredEventIds = async () => {
       {trendingEvents.length === 0 ? (
         <p className="text-gray-500 ml-3">No trending events found.</p>
       ) : (
-        trendingEvents.map((event) => (
-          <div
-            key={event.id}
-            className="min-w-[260px] bg-white shadow-lg rounded-lg overflow-hidden transform transition hover:scale-105"
-          >
-            {/* Gradient header instead of image */}
-            <div className="h-32 bg-gradient-to-r from-indigo-400 to-purple-500 flex items-center justify-center text-white text-lg font-bold text-center p-3">
-              {event.title}
+        trendingEvents.map((event) => {
+          const isRegistered = registeredEventIds.has(event.id);
+          const eventEnded = new Date(event.endTime) < new Date();
+
+          const handleClick = () => {
+            if (!isRegistered && eventEnded) return; // prevent navigation
+            navigate(`/events/${event.id}`, {
+              state: { event, isRegistered },
+            });
+          };
+
+          const getButtonLabel = () => {
+            if (isRegistered) return "Registered";
+            if (eventEnded) return "Event Ended";
+            return "Register";
+          };
+
+          const getButtonStyle = () => {
+            if (isRegistered || eventEnded)
+              return "bg-gray-300 text-gray-600 cursor-not-allowed";
+            return "bg-indigo-600 text-white hover:bg-indigo-700";
+          };
+
+          return (
+            <div
+              key={event.id}
+              className="min-w-[260px] bg-white shadow-lg rounded-lg overflow-hidden transform transition hover:scale-105"
+            >
+              {/* Gradient header */}
+              <div className="h-32 bg-gradient-to-r from-indigo-400 to-purple-500 flex items-center justify-center text-white text-lg font-bold text-center p-3">
+                {event.title}
+              </div>
+
+              <div className="p-3 space-y-1">
+                <p className="text-sm text-gray-500">
+                  📅 {new Date(event.startTime).toLocaleDateString()}
+                </p>
+                <p className="text-sm text-gray-500">
+                  📍 {event.location || "Online"}
+                </p>
+                <p className="text-sm text-gray-500">
+                  👥 {event.registeredCount || 0} registered
+                </p>
+
+                {/* CTA Button */}
+                <button
+                  onClick={handleClick}
+                  disabled={!isRegistered && eventEnded}
+                  className={`mt-3 w-full py-2 rounded-lg font-semibold transition ${getButtonStyle()}`}
+                >
+                  {getButtonLabel()}
+                </button>
+              </div>
             </div>
-            <div className="p-3 space-y-1">
-              <p className="text-sm text-gray-500">
-                📅 {new Date(event.startTime).toLocaleDateString()}
-              </p>
-              <p className="text-sm text-gray-500">
-                📍 {event.location || 'Online'}
-              </p>
-              <p className="text-sm text-gray-500">
-                👥 {event.registeredCount || 0} registered
-              </p>
-              <button
-                onClick={() =>
-                  navigate(`/events/${event.id}`, {
-                    state: {
-                      event, // still pass event so page doesn't need another fetch
-                      isRegistered: registeredEventIds.has(event.id),
-                    },
-                  })
-                }
-                className={`mt-3 w-full py-2 rounded-lg font-semibold transition ${
-                  registeredEventIds.has(event.id)
-                    ? "bg-gray-300 text-gray-700 cursor-not-allowed"
-                    : "bg-indigo-600 text-white hover:bg-indigo-700"
-                }`}
-              >
-                {registeredEventIds.has(event.id) ? "Registered" : "Register"}
-              </button>
-            </div>
-          </div>
-        ))
+          );
+        })
       )}
     </div>
   </div>
 )}
+
 
 
       {/* Filters only for "All Events" tab */}

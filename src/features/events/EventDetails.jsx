@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import { Star } from "lucide-react";
 import FeedbackForm from "../../features/feedback/feedbackForm";
-import FeedbackList from "../../features/feedback/feedbackList";
 import { getFeedbackSummary } from "../../features/feedback/feedbackAPI";
 import API from "../../services/axiosInstance";
 import Modal from "react-modal";
@@ -19,6 +18,8 @@ const EventDetails = () => {
   const [isRegistered, setIsRegistered] = useState(initialIsRegistered || false);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showFeedbackForm, setShowFeedbackForm] = useState(true);
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
 
   useEffect(() => {
     if (!event) return;
@@ -79,25 +80,17 @@ const EventDetails = () => {
     }
   };
 
-  // Convert backend Rating enum -> numeric
   const ratingToNumber = (ratingEnum) => {
     switch (ratingEnum) {
-      case "ONE":
-        return 1;
-      case "TWO":
-        return 2;
-      case "THREE":
-        return 3;
-      case "FOUR":
-        return 4;
-      case "FIVE":
-        return 5;
-      default:
-        return 0;
+      case "ONE": return 1;
+      case "TWO": return 2;
+      case "THREE": return 3;
+      case "FOUR": return 4;
+      case "FIVE": return 5;
+      default: return 0;
     }
   };
 
-  // Render average stars
   const renderAverageStars = () => {
     if (!feedbackSummary || !feedbackSummary.averageRating) return null;
     const avg = feedbackSummary.averageRating;
@@ -105,15 +98,13 @@ const EventDetails = () => {
     const halfStar = avg - fullStars >= 0.5;
     return (
       <div className="flex items-center space-x-1 mb-2">
-        {[1, 2, 3, 4, 5].map((i) => (
+        {[1,2,3,4,5].map(i => (
           <Star
             key={i}
             className={`w-5 h-5 ${
-              i <= fullStars
-                ? "text-yellow-400 fill-yellow-400"
-                : halfStar && i === fullStars + 1
-                ? "text-yellow-300 fill-yellow-300"
-                : "text-gray-300"
+              i <= fullStars ? "text-yellow-400 fill-yellow-400" :
+              halfStar && i === fullStars + 1 ? "text-yellow-300 fill-yellow-300" :
+              "text-gray-300"
             }`}
           />
         ))}
@@ -129,13 +120,7 @@ const EventDetails = () => {
         onClick={() => navigate("/user-dashboard", { state: { tab: fromTab } })}
         className="mb-6 flex items-center text-indigo-600 hover:text-indigo-800 font-semibold"
       >
-        <svg
-          className="w-5 h-5 mr-2"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-        >
+        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"></path>
         </svg>
         Back to Events
@@ -149,11 +134,9 @@ const EventDetails = () => {
         <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-semibold">
           {categoryName || "Uncategorized"}
         </span>
-        <span
-          className={`px-3 py-1 rounded-full text-sm font-semibold ${
-            status === "APPROVED" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
-          }`}
-        >
+        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+          status === "APPROVED" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+        }`}>
           {status}
         </span>
       </div>
@@ -182,16 +165,12 @@ const EventDetails = () => {
 
       {/* Capacity Info */}
       <div className="flex items-center space-x-4 mb-6">
-        <div
-          className={`px-3 py-1 rounded-full font-semibold text-sm ${
-            availableSeats > 0 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-          }`}
-        >
+        <div className={`px-3 py-1 rounded-full font-semibold text-sm ${
+          availableSeats > 0 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+        }`}>
           {availableSeats > 0 ? `${availableSeats} spots left` : "Full"}
         </div>
-        <div className="text-sm text-gray-600">
-          ({registeredCount}/{capacity || "N/A"} registered)
-        </div>
+        <div className="text-sm text-gray-600">({registeredCount}/{capacity || "N/A"} registered)</div>
       </div>
 
       {/* Organizer */}
@@ -233,39 +212,21 @@ const EventDetails = () => {
           </button>
         )}
       </div>
-
-      {/* Feedback Form & List */}
-      {isRegistered && (
-        <div className="mt-8">
-          <FeedbackForm eventId={event.id} onFeedbackSubmitted={loadFeedbackSummary} />
-          <FeedbackList eventId={event.id} />
-        </div>
-      )}
-
-      {/* Confirmation Modal */}
-      <Modal
-        isOpen={showModal}
-        onRequestClose={() => setShowModal(false)}
-        className="max-w-lg mx-auto mt-20 p-6 bg-white rounded-xl shadow-xl outline-none"
-        overlayClassName="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center"
-      >
-        <h2 className="text-2xl font-bold mb-4 text-indigo-700">Registration Successful! ✅</h2>
-        <p className="mb-2">You have successfully registered for:</p>
-        <p className="font-semibold text-gray-800">{title}</p>
-        <p className="text-gray-700 mt-2">
-          Date & Time: {formatDateTime(startTime)} - {formatDateTime(endTime)}
-        </p>
-        <p className="text-gray-700">Location: {eventLocation || "Online"}</p>
-        <p className="text-gray-600 mt-4 text-sm">
-          A confirmation email has been sent to your registered email.
-        </p>
-        <button
-          onClick={() => setShowModal(false)}
-          className="mt-6 w-full py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition"
-        >
-          Close
-        </button>
-      </Modal>
+{isRegistered && !feedbackSubmitted && (
+  <div className="mt-8">
+    {showFeedbackForm && (
+      <FeedbackForm
+        eventId={event.id}
+        onFeedbackSubmitted={() => {
+          loadFeedbackSummary();
+          setFeedbackSubmitted(true); // mark as submitted
+          setShowFeedbackForm(false); // close form
+        }}
+        onClose={() => setShowFeedbackForm(false)}
+      />
+    )}
+  </div>
+)}
     </div>
   );
 };

@@ -23,11 +23,12 @@ const EventCard = ({ event, showRegister = true, isRegistered = false }) => {
   const formatDateTime = (dt) => (dt ? dayjs(dt).format('MMM D, YYYY • h:mm A') : '');
   const availableSeats = Math.max(0, capacity - registeredCount);
 
+  // ✅ Check if event already ended
+  const eventEnded = dayjs().isAfter(dayjs(endTime));
+
   const handleClick = () => {
-    // Navigate to the event details page and pass whether the user is registered
     navigate(`/events/${id}`, { state: { event, isRegistered } });
     console.log('EventCard:', event.title, 'isRegistered:', isRegistered);
-
   };
 
   return (
@@ -37,14 +38,19 @@ const EventCard = ({ event, showRegister = true, isRegistered = false }) => {
         <span className="bg-white text-indigo-700 px-3 py-1 rounded-full text-xs font-semibold">
           {categoryName}
         </span>
-        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${status === 'APPROVED' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+        <span
+          className={`px-3 py-1 rounded-full text-xs font-semibold ${
+            status === 'APPROVED'
+              ? 'bg-green-100 text-green-700'
+              : 'bg-yellow-100 text-yellow-700'
+          }`}
+        >
           {status}
         </span>
       </div>
 
       {/* Main content */}
       <div className="p-5 space-y-3">
-        {/* Title */}
         <h2 className="text-xl font-semibold text-gray-800">{title}</h2>
 
         {/* Time & Location */}
@@ -53,21 +59,27 @@ const EventCard = ({ event, showRegister = true, isRegistered = false }) => {
           <p>📍 {location}</p>
         </div>
 
-        {/* Description */}
         <p className="text-gray-700 text-sm line-clamp-3">{description}</p>
 
         {/* Capacity Info */}
         <div className="text-sm mt-2">
-          <span className={`inline-block px-2 py-1 rounded-md text-xs font-medium ${availableSeats > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-            {availableSeats > 0 ? `${availableSeats} spots left `: 'Full'}
+          <span
+            className={`inline-block px-2 py-1 rounded-md text-xs font-medium ${
+              availableSeats > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+            }`}
+          >
+            {availableSeats > 0 ? `${availableSeats} spots left` : 'Full'}
           </span>
-          <span className="ml-2 text-gray-500">({registeredCount}/{capacity} registered)</span>
+          <span className="ml-2 text-gray-500">
+            ({registeredCount}/{capacity} registered)
+          </span>
         </div>
+
         {event.feedbackSummary && (
-            <p className="text-sm text-gray-600">
-              😊 {event.feedbackSummary.positivePercent?.toFixed(1)}% | 😐 {event.feedbackSummary.neutralPercent?.toFixed(1)}% | 😡 {event.feedbackSummary.negativePercent?.toFixed(1)}%
-            </p>
-          )}
+          <p className="text-sm text-gray-600">
+            😊 {event.feedbackSummary.positivePercent?.toFixed(1)}% | 😐 {event.feedbackSummary.neutralPercent?.toFixed(1)}% | 😡 {event.feedbackSummary.negativePercent?.toFixed(1)}%
+          </p>
+        )}
 
         {/* Organizer */}
         <div className="flex items-center mt-4 gap-3">
@@ -84,20 +96,24 @@ const EventCard = ({ event, showRegister = true, isRegistered = false }) => {
         {showRegister && (
           <button
             onClick={handleClick}
-            disabled={!isRegistered && availableSeats <= 0}
+            disabled={!isRegistered && (availableSeats <= 0 || eventEnded)}
             className={`w-full mt-4 py-2 px-4 rounded-md font-medium transition-colors ${
               isRegistered
                 ? 'bg-blue-600 text-white hover:bg-blue-700'
-                : availableSeats > 0
+                : availableSeats > 0 && !eventEnded
                 ? 'bg-indigo-600 text-white hover:bg-indigo-700'
                 : 'bg-gray-300 text-gray-600 cursor-not-allowed'
             }`}
           >
-            {isRegistered ? 'View Details' : availableSeats > 0 ? 'Register Now' : 'Registration Closed'}
-            
+            {isRegistered
+              ? 'View Details'
+              : eventEnded
+              ? 'Event Ended'
+              : availableSeats > 0
+              ? 'Register Now'
+              : 'Registration Closed'}
           </button>
         )}
-        
       </div>
     </div>
   );
