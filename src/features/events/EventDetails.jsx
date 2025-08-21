@@ -7,6 +7,8 @@ import { getFeedbackSummary } from "../../features/feedback/feedbackAPI";
 import API from "../../services/axiosInstance";
 import Modal from "react-modal";
 import { toast } from "react-toastify";
+import MapComponent from "../../components/MapComponent"; // make sure the path is correct
+
 
 const EventDetails = () => {
   const navigate = useNavigate();

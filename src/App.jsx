@@ -3,6 +3,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 import ChatbotUI from "./components/ChatbotUI";
+import 'leaflet/dist/leaflet.css';
 import RoleRedirect from "./components/RoleRedirect";
 import EventDetails from "./features/events/EventDetails";
 import About from "./pages/About";

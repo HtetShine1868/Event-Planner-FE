@@ -15,10 +15,9 @@ const UserDashboard = () => {
 
   // Events and pagination states for each tab
   const [trendingEvents, setTrendingEvents] = useState([]);
-    const [trendingCategory, setTrendingCategory] = useState('');
+  const [trendingCategory, setTrendingCategory] = useState('');
   const [trendingPage, setTrendingPage] = useState(0);
   const [trendingTotalPages, setTrendingTotalPages] = useState(1);
-
   const [registeredEvents, setRegisteredEvents] = useState([]);
   const [registeredEventIds, setRegisteredEventIds] = useState(new Set());
   const [registeredPage, setRegisteredPage] = useState(0);
@@ -30,7 +29,10 @@ const UserDashboard = () => {
   
   // Filters for All Events tab
   const [filterCategoryId, setFilterCategoryId] = useState('');
-  const [filterLocation, setFilterLocation] = useState('');
+  const [filterLocation, setFilterLocation] = useState(''); // filtered by category
+  const [category, setCategory] = useState("All");
+  const [categories, setCategories] = useState([]);
+
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -68,21 +70,38 @@ const UserDashboard = () => {
     }
   };
 
+  useEffect(() => {
+  const fetchCategories = async () => {
+    try {
+      const res = await API.get("/event-categories"); // or your endpoint for categories
+      setCategories(res.data || []);
+    } catch (err) {
+      console.error("Failed to fetch categories:", err);
+    }
+  };
+
+  fetchCategories();
+}, []);
+
 const fetchEvents = async (tab, page = 0) => {
   setLoading(true);
   try {
     let res;
 
     switch (tab) {
-        case 'trending': {
-            const params = { limit: PAGE_SIZE };
-            if (trendingCategory) params.categoryId = trendingCategory; // pass category
-            res = await API.get("/event/trending", { params });
+      case "trending": {
+        const params = { page, size: PAGE_SIZE };
+        if (trendingCategory) params.categoryId = trendingCategory;
+           try {
+            const res = await API.get("/event/trending", { params });
             setTrendingEvents(res.data || []);
             setTrendingPage(page);
-            break;
-        }
-
+            } catch (err) {
+              console.error("Failed to fetch trending events", err);
+              setTrendingEvents([]);
+            }
+        break;
+      }
       case 'registered': {
         const registeredParams = { page, size: PAGE_SIZE };
         res = await API.get('/registrations/my', { params: registeredParams });
@@ -122,6 +141,7 @@ const fetchEvents = async (tab, page = 0) => {
     setLoading(false);
   }
 };
+
 
 
 const fetchAllRegisteredEventIds = async () => {
@@ -356,7 +376,8 @@ const fetchAllRegisteredEventIds = async () => {
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto relative font-sans">
+    <div className="p-6 max-w-5xl mx-auto relative font-sans min-h-screen flex flex-col">
+
     
       <Navibar />
       
@@ -556,31 +577,32 @@ const fetchAllRegisteredEventIds = async () => {
           </button>
         ))}
       </nav>
+{/* Filters only for "Trending Events" tab */}
+{/* Trending Events Tab */}
 {activeTab === "trending" && (
-  <div className="mb-6">
-    {/* Banner */}
-    <p className="text-indigo-600 font-semibold mb-3">
-      🔥 Check out the most popular events happening now!
-    </p>
-
+  <div>
     {/* Category Filter */}
-    <div className="flex gap-3 mb-3 items-center">
+    <div className="flex flex-wrap gap-4 mb-6">
       <select
         value={trendingCategory}
         onChange={(e) => {
-          setTrendingCategory(e.target.value);
-          fetchEvents("trending", 0); // re-fetch trending events
+          const categoryId = e.target.value;
+          setTrendingCategory(categoryId);
+          setTrendingPage(0); // reset page
+          fetchEvents("trending", 0); // fetch filtered events
         }}
-        className="border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        className="border border-gray-300 rounded px-3 py-2 max-w-xs"
       >
         <option value="">All Categories</option>
-        <option value="1">Music</option>
-        <option value="2">Sports</option>
-        <option value="3">Tech</option>
+        {categories.map((cat) => (
+          <option key={cat.id} value={cat.id}>
+            {cat.name}
+          </option>
+        ))}
       </select>
     </div>
 
-    {/* Horizontal Carousel */}
+    {/* Horizontal Carousel / Event Cards */}
     <div className="flex gap-4 overflow-x-auto scrollbar-hide py-2">
       {trendingEvents.length === 0 ? (
         <p className="text-gray-500 ml-3">No trending events found.</p>
@@ -590,10 +612,8 @@ const fetchAllRegisteredEventIds = async () => {
           const eventEnded = new Date(event.endTime) < new Date();
 
           const handleClick = () => {
-            if (!isRegistered && eventEnded) return; // prevent navigation
-            navigate(`/events/${event.id}`, {
-              state: { event, isRegistered },
-            });
+            if (!isRegistered && eventEnded) return;
+            navigate(`/events/${event.id}`, { state: { event, isRegistered } });
           };
 
           const getButtonLabel = () => {
@@ -613,7 +633,7 @@ const fetchAllRegisteredEventIds = async () => {
               key={event.id}
               className="min-w-[260px] bg-white shadow-lg rounded-lg overflow-hidden transform transition hover:scale-105"
             >
-              {/* Gradient header */}
+              {/* Gradient Header */}
               <div className="h-32 bg-gradient-to-r from-indigo-400 to-purple-500 flex items-center justify-center text-white text-lg font-bold text-center p-3">
                 {event.title}
               </div>
@@ -648,24 +668,27 @@ const fetchAllRegisteredEventIds = async () => {
 
 
 
+
       {/* Filters only for "All Events" tab */}
       {activeTab === 'all' && (
         <div className="flex flex-wrap gap-4 mb-6">
-          <select
-            value={filterCategoryId}
-            onChange={(e) => {
-              setFilterCategoryId(e.target.value);
-              setAllPage(0); // reset page on filter change
-            }}
-            className="border border-gray-300 rounded px-3 py-2 max-w-xs"
-          >
-            <option value="">All Categories</option>
-            {/* Example hardcoded categories, replace with dynamic if available */}
-            <option value="1">Music</option>
-            <option value="2">Sports</option>
-            <option value="3">Tech</option>
-            <option value="4">Art</option>
-          </select>
+        <select
+          value={filterCategoryId}
+          onChange={(e) => {
+            const category = e.target.value;
+            setFilterCategoryId(category);
+            setAllPage(0);
+            fetchEvents('all', 0); // fetch immediately with updated filter
+          }}
+          className="border border-gray-300 rounded px-3 py-2 max-w-xs"
+        >
+          <option value="">All Categories</option>
+          <option value="1">Music</option>
+          <option value="3">Sports</option>
+          <option value="2">Tech</option>
+          <option value="4">Art</option>
+        </select>
+
 
           <input
             type="text"
