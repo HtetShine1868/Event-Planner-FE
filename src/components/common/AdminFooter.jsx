@@ -2,10 +2,10 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
 
-const Footer = () => {
+const AdminFooter = () => {
   return (
-    <footer className="footer-full">
-      <div className="footer-content-full">
+    <footer className="dashboard-footer">
+      <div className="footer-content">
         
         {/* Logo / Brand */}
         <div className="footer-brand">
@@ -50,7 +50,7 @@ const Footer = () => {
       </div>
 
       {/* Bottom Bar */}
-      <div className="footer-bottom-full">
+      <div className="footer-bottom">
         <p>© {new Date().getFullYear()} Event Planner Admin Dashboard. All rights reserved.</p>
         <div className="footer-links">
           <Link to="/privacy" className="footer-bottom-link">Privacy Policy</Link>
@@ -61,4 +61,4 @@ const Footer = () => {
   );
 };
 
-export default Footer;
+export default AdminFooter;

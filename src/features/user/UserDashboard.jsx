@@ -7,6 +7,8 @@ import { useNavigate } from 'react-router-dom';
 import { jwtDecode }from 'jwt-decode';
 import OrganizerApplicationForm from "../../organizer/OrganizerApplicationForm";
 import ChatbotUI from "../../components/ChatbotUI";
+import RecommendedEvents from "../../features/events/RecommendedEvent";
+import Footer from '../../components/Footer';
 
 const PAGE_SIZE = 6;
 
@@ -321,6 +323,7 @@ const fetchAllRegisteredEventIds = async () => {
     { id: 'registered', label: 'Registered Events' },
     { id: 'all', label: 'All Events' },
     { id: 'organizer', label: 'Organizer Application' },
+    { id: "recommended", label: "Recommended" }
   ];
 
   // Select events and pagination info for active tab
@@ -376,12 +379,8 @@ const fetchAllRegisteredEventIds = async () => {
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto relative font-sans min-h-screen flex flex-col">
-
-    
+        <div className="min-h-screen bg-gray-50 font-sans">  
       <Navibar />
-      
-
       {/* Header */}
       <header className="flex justify-between items-center mb-6 gap-4">
         <h1 className="text-3xl font-extrabold text-gray-900 tracking-wide flex-shrink-0">
@@ -562,12 +561,12 @@ const fetchAllRegisteredEventIds = async () => {
       </header>
 
       {/* Tabs */}
-      <nav className="flex space-x-6 border-b border-gray-300 mb-6">
+        <nav className="flex border-b border-gray-300 mb- w-full">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`pb-3 font-semibold transition-colors duration-300 ${
+            className={`flex-1 text-center pb-3 font-semibold transition-colors duration-300 ${
               activeTab === tab.id
                 ? 'border-b-4 border-indigo-600 text-indigo-600'
                 : 'text-gray-600 hover:text-indigo-600'
@@ -578,29 +577,30 @@ const fetchAllRegisteredEventIds = async () => {
         ))}
       </nav>
 {/* Filters only for "Trending Events" tab */}
-{/* Trending Events Tab */}
-{activeTab === "trending" && (
-  <div>
-    {/* Category Filter */}
-    <div className="flex flex-wrap gap-4 mb-6">
-      <select
-        value={trendingCategory}
-        onChange={(e) => {
-          const categoryId = e.target.value;
-          setTrendingCategory(categoryId);
-          setTrendingPage(0); // reset page
-          fetchEvents("trending", 0); // fetch filtered events
-        }}
-        className="border border-gray-300 rounded px-3 py-2 max-w-xs"
-      >
-        <option value="">All Categories</option>
-        {categories.map((cat) => (
-          <option key={cat.id} value={cat.id}>
-            {cat.name}
-          </option>
-        ))}
-      </select>
-    </div>
+
+        {/* Trending Events Tab */}
+        {activeTab === "trending" && (
+          <div>
+            {/* Category Filter */}
+            <div className="flex flex-wrap gap-4 mb-6">
+              <select
+                value={trendingCategory}
+                onChange={(e) => {
+                  const categoryId = e.target.value;
+                  setTrendingCategory(categoryId);
+                  setTrendingPage(0); // reset page
+                  fetchEvents("trending", 0); // fetch filtered events
+                }}
+                className="border border-gray-300 rounded px-3 py-2 max-w-xs"
+              >
+                <option value="">All Categories</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
     {/* Horizontal Carousel / Event Cards */}
     <div className="flex gap-4 overflow-x-auto scrollbar-hide py-2">
@@ -667,8 +667,6 @@ const fetchAllRegisteredEventIds = async () => {
 )}
 
 
-
-
       {/* Filters only for "All Events" tab */}
       {activeTab === 'all' && (
         <div className="flex flex-wrap gap-4 mb-6">
@@ -688,8 +686,6 @@ const fetchAllRegisteredEventIds = async () => {
           <option value="2">Tech</option>
           <option value="4">Art</option>
         </select>
-
-
           <input
             type="text"
             placeholder="Filter by location"
@@ -702,11 +698,12 @@ const fetchAllRegisteredEventIds = async () => {
           />
         </div>
       )}
+
       {activeTab === 'organizer' && (
-  <div className="max-w-3xl mx-auto bg-white shadow-xl rounded-2xl p-8">
-    <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-      Apply to Become an Organizer 🚀
-    </h2>
+        <div className="max-w-3xl mx-auto bg-white shadow-xl rounded-2xl p-8">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+           Apply to Become an Organizer 🚀
+          </h2>
 
     {/* Organizer Application Form */}
     <OrganizerApplicationForm />
@@ -716,6 +713,15 @@ const fetchAllRegisteredEventIds = async () => {
     </p>
   </div>
 )}
+{activeTab === "recommended" && user?.id && (
+  <div className="p-4">
+    <h2 className="text-2xl font-bold text-gray-900 mb-4">
+      Recommended Events For You
+    </h2>
+    <RecommendedEvents userId={user.id} />
+  </div>
+)}
+
 
       {/* Events */}
       <section>
@@ -755,6 +761,8 @@ const fetchAllRegisteredEventIds = async () => {
         }
       `}</style>
      <ChatbotUI />
+           
+               <Footer />
     </div>
   );
 };

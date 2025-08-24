@@ -23,21 +23,35 @@ const RegisterPage = () => {
     setError('');
   };
 
+  const extractErrorMessage = (err, fallback = 'Something went wrong.') => {
+    if (err.response) {
+      const data = err.response.data;
+      if (data?.error && data?.details) return `${data.error}: ${data.details}`;
+      if (data?.message) return data.message;
+      if (typeof data === 'string') return data;
+      return JSON.stringify(data);
+    } else if (err.request) {
+      return 'No response from server. Please check your network.';
+    } else {
+      return err.message || fallback;
+    }
+  };
+
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     try {
       await axiosInstance.post('/auth/register-request', form);
-      setStep(2); // move to OTP step
+      setStep(2);
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      console.error(err);
+      setError(extractErrorMessage(err, 'Registration failed. Please try again.'));
     } finally {
       setLoading(false);
     }
   };
 
-  //Verify OTP
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -49,9 +63,10 @@ const RegisterPage = () => {
       });
       const token = res.data.token;
       localStorage.setItem('token', token);
-      navigate('/user-profile-form'); // after verification, go to profile form
+      navigate('/user-profile-form');
     } catch (err) {
-      setError(err.response?.data?.message || 'OTP verification failed.');
+      console.error(err);
+      setError(extractErrorMessage(err, 'OTP verification failed.'));
     } finally {
       setLoading(false);
     }
@@ -75,7 +90,14 @@ const RegisterPage = () => {
           {step === 1 && (
             <>
               <h2 className="text-3xl font-bold mb-6 text-center">Create Account</h2>
-              {error && <div className="bg-red-100 text-red-700 p-3 mb-4 rounded">{error}</div>}
+
+              {error && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 mb-4 rounded flex items-start gap-2 break-words">
+                  <span className="text-xl">❌</span>
+                  <span className="text-sm">{error}</span>
+                </div>
+              )}
+
               <form onSubmit={handleRegister} className="space-y-5">
                 <input
                   type="text"
@@ -134,7 +156,14 @@ const RegisterPage = () => {
           {step === 2 && (
             <>
               <h2 className="text-3xl font-bold mb-6 text-center">Verify Email</h2>
-              {error && <div className="bg-red-100 text-red-700 p-3 mb-4 rounded">{error}</div>}
+
+              {error && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 mb-4 rounded flex items-start gap-2 break-words">
+                  <span className="text-xl">❌</span>
+                  <span className="text-sm">{error}</span>
+                </div>
+              )}
+
               <form onSubmit={handleVerifyOtp} className="space-y-5">
                 <input
                   type="text"

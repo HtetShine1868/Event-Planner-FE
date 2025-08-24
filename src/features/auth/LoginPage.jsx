@@ -5,46 +5,56 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axiosInstance from '../../services/axiosInstance';
 
-
 const LoginPage = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState({ username: '', password: '' });
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
     setError('');
   };
 
+  const extractErrorMessage = (err, fallback = 'Login failed. Please try again.') => {
+    if (err.response) {
+      const data = err.response.data;
+      if (data?.error && data?.details) return `${data.error}: ${data.details}`;
+      if (data?.message) return data.message;
+      if (typeof data === 'string') return data;
+      return JSON.stringify(data);
+    } else if (err.request) {
+      return 'No response from server. Please check your network.';
+    } else {
+      return err.message || fallback;
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    e.stopPropagation(); // prevent any parent handlers
     setError('');
+    setLoading(true);
     try {
       const res = await axiosInstance.post('/auth/login', form);
       const token = res.data.token;
-
-      // Decode the token to get the role
       const decoded = jwtDecode(token);
       const role = decoded.role;
 
-      // Store token and role in localStorage
       localStorage.setItem('token', token);
       localStorage.setItem('role', role);
 
-      // Redirect user to dashboard based on role
-      if (role === 'ADMIN') {
-        navigate('/admin-dashboard');
-      } else if (role === 'ORGANIZER') {
-        navigate('/organizer-dashboard');
-      } else if (role === 'USER') {
-        navigate('/user-dashboard');
-      } else {
-        // fallback redirect
-        navigate('/login');
-      }
+      // Navigate based on role
+      if (role === 'ADMIN') navigate('/admin-dashboard');
+      else if (role === 'ORGANIZER') navigate('/organizer-dashboard');
+      else if (role === 'USER') navigate('/user-dashboard');
+      else navigate('/login');
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      console.error(err);
+      setError(extractErrorMessage(err));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -66,7 +76,10 @@ const LoginPage = () => {
           <h2 className="text-3xl font-bold mb-6 text-center">Login</h2>
 
           {error && (
-            <div className="bg-red-100 text-red-700 p-3 mb-4 rounded">{error}</div>
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 mb-4 rounded flex items-start gap-2 break-words">
+              <span className="text-xl">❌</span>
+              <span className="text-sm">{error}</span>
+            </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -102,9 +115,10 @@ const LoginPage = () => {
 
             <button
               type="submit"
-              className="w-full bg-indigo-600 text-white py-3 rounded hover:bg-indigo-700 transition"
+              className="w-full bg-indigo-600 text-white py-3 rounded hover:bg-indigo-700 transition disabled:opacity-50"
+              disabled={loading}
             >
-              Login
+              {loading ? 'Logging in...' : 'Login'}
             </button>
           </form>
 

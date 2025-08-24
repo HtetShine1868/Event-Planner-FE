@@ -1,11 +1,15 @@
 // src/features/organizer/OrganizerDashboard.jsx
-import React, { useEffect, useState } from 'react';
+  import React, { useEffect, useState, useRef } from 'react';
 import API from '../../services/axiosInstance';
 import Navibar from '../../components/Navibar';
 import { useNavigate } from "react-router-dom";  // ✅ import navigate
 import { jwtDecode } from "jwt-decode"; 
 import OrganizerEventCard from '../../components/common/OrganizerEventCard';
 import { getApprovedEvents } from '../../services/eventService';
+import ChatbotUI from "../../components/ChatbotUI";
+import Footer from '../../components/Footer';
+
+
 
 const PAGE_SIZE = 6;
 
@@ -22,9 +26,20 @@ const OrganizerDashboard = () => {
   const [error, setError] = useState(null);
   const [approvedEvents, setApprovedEvents] = useState([]);
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState(initialFormData());
   const [formMode, setFormMode] = useState('create'); // "create" or "edit"
   const [feedback, setFeedback] = useState({ type: '', message: '' });
+  const [user, setUser] = useState(null);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    fullName: '',
+    gender: '',
+    dateOfBirth: '',
+    address: '',
+  });
 
   function initialFormData() {
     return {
@@ -137,7 +152,8 @@ const fetchApprovedEvents = async (page, organizerId) => {
       setFormMode('create');
       setActiveTab('myEvents');
       fetchMyEvents(page);
-    } catch (err) {
+    }
+     catch (err) {
       console.error(err);
       setFeedback({ type: 'error', message: 'Failed to save event.' });
     }
@@ -188,26 +204,230 @@ const fetchApprovedEvents = async (page, organizerId) => {
       alert('Failed to delete event.');
     }
   };
-  return (
-  <div className="p-6 max-w-5xl mx-auto font-sans">
-      <Navibar />
-      <h1 className="text-3xl font-extrabold mb-6">Organizer Dashboard</h1>
+  // Add this function to get user ID from token
+const getUserIdFromToken = () => {
+  const token = localStorage.getItem('token');
+  if (!token) return null;
+  try {
+    const decoded = jwtDecode(token);
+    return decoded.id;
+  } catch {
+    return null;
+  }
+};
 
-      {/* Tabs */}
-      <div className="flex gap-2 mb-8 border-b border-gray-200">
+// Add this useEffect to fetch user profile
+useEffect(() => {
+  const fetchUserProfile = async () => {
+    const userId = getUserIdFromToken();
+    if (!userId) {
+      console.error('User ID not found in token');
+      return;
+    }
+
+    try {
+      const res = await API.get(`/user/${userId}/profile`);
+      setUser(res.data);
+    } catch (err) {
+      console.error('Failed to fetch profile', err);
+    }
+  };
+
+  fetchUserProfile();
+}, []);
+
+// Add these handler functions
+const handleEditChange = (e) => {
+  setEditForm({ ...editForm, [e.target.name]: e.target.value });
+};
+
+const handleSaveProfile = async () => {
+  const userId = getUserIdFromToken();
+  if (!userId) {
+    alert('User not found.');
+    return;
+  }
+
+  const payload = {
+    ...editForm,
+    gender: editForm.gender ? editForm.gender.toUpperCase() : null,
+  };
+
+  try {
+    await API.put(`/user/${userId}/profile`, payload);
+    setUser(payload);
+    setIsEditing(false);
+  } catch (err) {
+    console.error('Failed to save profile', err);
+    alert('Failed to save profile. Please try again.');
+  }
+};
+
+const handleCancelEdit = () => {
+  setIsEditing(false);
+  if (user) {
+    setEditForm({
+      fullName: user.fullName || '',
+      gender: user.gender || '',
+      dateOfBirth: user.dateOfBirth ? user.dateOfBirth.slice(0, 10) : '',
+      address: user.address || '',
+    });
+  }
+};
+
+const handleLogout = () => {
+  localStorage.removeItem('token');
+  navigate('/login');
+};
+
+// Initialize edit form when user data loads
+useEffect(() => {
+  if (user) {
+    setEditForm({
+      fullName: user.fullName || '',
+      gender: user.gender || '',
+      dateOfBirth: user.dateOfBirth ? user.dateOfBirth.slice(0, 10) : '',
+      address: user.address || '',
+    });
+  }
+}, [user]);
+  return (
+ <div className="min-h-screen bg-gray-50 font-sans">
+
+  {/* Header Container */}
+  <div className="max-w-7xl mx-auto px-6 py-6 flex justify-between items-center bg-white rounded-xl shadow-md border border-gray-100">
+    <h1 className="text-3xl font-extrabold text-gray-900">Organizer Dashboard</h1>
+
+    {/* Profile Button */}
+    <div className="relative" ref={profileRef}>
+      <button
+        onClick={() => setProfileOpen(!profileOpen)}
+        className="flex items-center space-x-3 bg-white border border-gray-200 px-4 py-2 rounded-full shadow-sm hover:shadow-md transition"
+      >
+        {/* Avatar */}
+        <div className="w-10 h-10 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold text-lg">
+          {(user?.fullName
+            ? user.fullName.split(" ").map((n) => n[0]).join("").toUpperCase()
+            : user?.username?.slice(0, 2).toUpperCase()) || "OR"}
+        </div>
+
+        {/* Name + Role */}
+        <div className="text-left">
+          <span className="block font-semibold text-gray-800 text-sm">
+            {user?.fullName || user?.username || "Organizer"}
+          </span>
+          <span className="block text-xs text-gray-500">Event Organizer</span>
+        </div>
+      </button>
+
+      {/* Dropdown */}
+      {profileOpen && (
+        <div className="absolute right-0 mt-4 w-80 bg-white rounded-2xl shadow-xl border border-gray-100 p-6 z-20">
+          {/* Header */}
+          <div className="flex items-center space-x-4 mb-6">
+            <div className="w-16 h-16 bg-indigo-500 text-white rounded-full flex items-center justify-center font-bold text-2xl">
+              {(user?.fullName
+                ? user.fullName.split(" ").map((n) => n[0]).join("").toUpperCase()
+                : user?.username?.slice(0, 2).toUpperCase()) || "OR"}
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">
+                {user?.fullName || user?.username || "Organizer"}
+              </h3>
+              <p className="text-sm text-gray-500">{user?.email || "No email provided"}</p>
+            </div>
+          </div>
+
+          {/* Editable Fields */}
+          <div className="space-y-4 text-sm mb-6">
+            <div className="flex justify-between items-center">
+              <p className="font-semibold text-gray-700">Full Name</p>
+              {!isEditing && (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="text-indigo-600 hover:text-indigo-800 transition"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-7-7l6 6"
+                    />
+                  </svg>
+                </button>
+              )}
+            </div>
+            {isEditing ? (
+              <input
+                type="text"
+                name="fullName"
+                value={editForm.fullName}
+                onChange={handleEditChange}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-400 focus:outline-none"
+              />
+            ) : (
+              <p className="text-gray-600">{user?.fullName || "-"}</p>
+            )}
+
+            {/* Add gender, dateOfBirth, address fields similarly */}
+          </div>
+
+          {/* Edit Buttons */}
+          {isEditing && (
+            <div className="flex space-x-3 mb-5">
+              <button
+                onClick={handleSaveProfile}
+                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg font-medium transition"
+              >
+                Save
+              </button>
+              <button
+                onClick={handleCancelEdit}
+                className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 rounded-lg font-medium transition"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+
+          {/* Logout */}
+          <button
+            onClick={handleLogout}
+            className="w-full bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white py-2 rounded-xl font-semibold transition"
+          >
+            Logout
+          </button>
+        </div>
+      )}
+    </div>
+  </div>
+
+
+
+<div className="max-w-7xl mx-auto px-6 mt-6 bg-white rounded-xl shadow-sm border border-gray-100">
+
+    {/* Tabs */}
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+      <div className="flex border-b border-gray-200">
         {[
-          { key: "myEvents", label: "My Events", color: "indigo" },
+          { key: "myEvents", label: "My Events", color: "purple" },
           { key: "form", label: "Create Event", color: "indigo" },
-          { key: "analysis", label: "Analysis", color: "blue" },
+          { key: "analysis", label: "Analytics", color: "blue" },
         ].map((tab) => (
           <button
             key={tab.key}
-            className={`px-5 py-2 text-sm font-medium rounded-t-lg transition-colors duration-200
-              ${
-                activeTab === tab.key
-                  ? `bg-${tab.color}-600 text-white shadow`
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
+            className={`flex-1 px-6 py-3 text-sm font-medium transition-colors duration-200 ${
+              activeTab === tab.key
+                ? "text-indigo-600 border-b-2 border-indigo-600"
+                : "text-gray-500 hover:text-indigo-600"
+            }`}
             onClick={() => {
               if (tab.key === "form") {
                 setFormMode("create");
@@ -221,7 +441,7 @@ const fetchApprovedEvents = async (page, organizerId) => {
           </button>
         ))}
       </div>
-
+      <div className="p-6">
       {/* My Events Tab */}
       {activeTab === "myEvents" && (
         <>
@@ -265,7 +485,7 @@ const fetchApprovedEvents = async (page, organizerId) => {
           ) : myEvents.length === 0 ? (
             <p className="text-center text-gray-500">No events found.</p>
           ) : (
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {myEvents.map((event) => (
                 <OrganizerEventCard
                   key={event.id}
@@ -440,8 +660,8 @@ const fetchApprovedEvents = async (page, organizerId) => {
         </div>
       )}
       
-   {activeTab === "analysis" && (
-        <>
+          {activeTab === "analysis" && (
+          <>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {approvedEvents.map((event) => (
               <div
@@ -527,6 +747,11 @@ const fetchApprovedEvents = async (page, organizerId) => {
           )}
         </>
       )}
+         </div>
+     </div>
+      </div>
+        <ChatbotUI />
+          <Footer />
     </div>
   );
 };
