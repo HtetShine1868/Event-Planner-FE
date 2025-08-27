@@ -8,6 +8,7 @@ import OrganizerEventCard from '../../components/common/OrganizerEventCard';
 import { getApprovedEvents } from '../../services/eventService';
 import ChatbotUI from "../../components/ChatbotUI";
 import Footer from '../../components/Footer';
+import NotificationBell from '../../components/NotificationBell';
 
 
 
@@ -95,14 +96,16 @@ const OrganizerDashboard = () => {
     }
   };
       
-     useEffect(() => {
-  if (activeTab === "analysis") {
-    const organizerId = getOrganizerId();
-    if (organizerId) {
-      fetchApprovedEvents(page, organizerId);
-    }
+useEffect(() => {
+  const organizerId = getOrganizerId();
+  if (!organizerId) return;
+  
+  if (activeTab === 'myEvents') {
+    fetchMyEvents(page);
+  } else if (activeTab === 'analysis') {
+    fetchApprovedEvents(page, organizerId);
   }
-}, [activeTab, page]);
+}, [page, activeTab]);
 
 const fetchApprovedEvents = async (page, organizerId) => {
   try {
@@ -291,13 +294,52 @@ useEffect(() => {
     });
   }
 }, [user]);
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+    
+    return (
+      <div className="flex justify-center items-center gap-2 mt-6">
+        <button
+          disabled={page === 0}
+          onClick={() => setPage(page - 1)}
+          className="px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-50 hover:bg-gray-300 transition"
+        >
+          Previous
+        </button>
+        
+        {[...Array(totalPages)].map((_, i) => (
+          <button
+            key={i}
+            className={`px-4 py-2 rounded-lg ${
+              i === page 
+                ? "bg-indigo-600 text-white" 
+                : "bg-gray-200 hover:bg-gray-300"
+            }`}
+            onClick={() => setPage(i)}
+          >
+            {i + 1}
+          </button>
+        ))}
+        
+        <button
+          disabled={page + 1 >= totalPages}
+          onClick={() => setPage(page + 1)}
+          className="px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-50 hover:bg-gray-300 transition"
+        >
+          Next
+        </button>
+      </div>
+    );
+  };
+
   return (
  <div className="min-h-screen bg-gray-50 font-sans">
-
+  <Navibar />
   {/* Header Container */}
   <div className="max-w-7xl mx-auto px-6 py-6 flex justify-between items-center bg-white rounded-xl shadow-md border border-gray-100">
     <h1 className="text-3xl font-extrabold text-gray-900">Organizer Dashboard</h1>
-
+  <div className="flex items-center gap-4">
+    <NotificationBell />
     {/* Profile Button */}
     <div className="relative" ref={profileRef}>
       <button
@@ -377,6 +419,52 @@ useEffect(() => {
             )}
 
             {/* Add gender, dateOfBirth, address fields similarly */}
+      
+                  {isEditing ? (
+                    <select
+                      name="gender"
+                      value={editForm.gender}
+                      onChange={handleEditChange}
+                      className="w-full border border-gray-300 rounded px-3 py-1"
+                    >
+                      <option value="">Select Gender</option>
+                      <option value="MALE">Male</option>
+                      <option value="FEMALE">Female</option>
+                      <option value="OTHER">Other</option>
+                    </select>
+                  ) : (
+                    <p>{user?.gender ? user.gender.charAt(0).toUpperCase() + user.gender.slice(1).toLowerCase() : '-'}</p>
+                  )}
+
+                  <div className="flex justify-between items-center">
+                    <p className="font-semibold text-gray-600">Date of Birth</p>
+                  </div>
+                  {isEditing ? (
+                    <input
+                      type="date"
+                      name="dateOfBirth"
+                      value={editForm.dateOfBirth}
+                      onChange={handleEditChange}
+                      className="w-full border border-gray-300 rounded px-3 py-1"
+                    />
+                  ) : (
+                    <p>{user?.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString() : '-'}</p>
+                  )}
+
+                  <div className="flex justify-between items-center">
+                    <p className="font-semibold text-gray-600">Address</p>
+                  </div>
+                  {isEditing ? (
+                    <textarea
+                      name="address"
+                      value={editForm.address}
+                      onChange={handleEditChange}
+                      className="w-full border border-gray-300 rounded px-3 py-1 resize-none"
+                      rows={3}
+                    />
+                  ) : (
+                    <p>{user?.address || '-'}</p>
+                  )}
           </div>
 
           {/* Edit Buttons */}
@@ -407,6 +495,7 @@ useEffect(() => {
         </div>
       )}
     </div>
+  </div>
   </div>
 
 
@@ -495,36 +584,36 @@ useEffect(() => {
                 />
               ))}
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex justify-center items-center gap-2 mt-6">
-                  <button
-                    disabled={page === 0}
-                    onClick={() => setPage((p) => p - 1)}
-                    className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50 hover:bg-gray-300 transition"
-                  >
-                    Prev
-                  </button>
-                  {[...Array(totalPages)].map((_, i) => (
-                    <button
-                      key={i}
-                      className={`px-3 py-1 rounded ${
-                        i === page ? "bg-indigo-600 text-white" : "bg-gray-200 hover:bg-gray-300"
-                      }`}
-                      onClick={() => setPage(i)}
-                    >
-                      {i + 1}
-                    </button>
-                  ))}
-                  <button
-                    disabled={page + 1 >= totalPages}
-                    onClick={() => setPage((p) => p + 1)}
-                    className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50 hover:bg-gray-300 transition"
-                  >
-                    Next
-                  </button>
-                </div>
-              )}
+          {/* My Events Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2 mt-6">
+              <button
+                disabled={page === 0}
+                onClick={() => setPage((p) => p - 1)}
+                className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50 hover:bg-gray-300 transition"
+              >
+                Prev
+              </button>
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i}
+                  className={`px-3 py-1 rounded ${
+                    i === page ? "bg-indigo-600 text-white" : "bg-gray-200 hover:bg-gray-300"
+                  }`}
+                  onClick={() => setPage(i)}
+                >
+                  {i + 1}
+                </button>
+              ))}
+              <button
+                disabled={page + 1 >= totalPages}
+                onClick={() => setPage((p) => p + 1)}
+                className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50 hover:bg-gray-300 transition"
+              >
+                Next
+              </button>
+            </div>
+          )}
             </div>
           )}
         </>
