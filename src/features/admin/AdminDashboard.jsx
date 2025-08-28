@@ -5,6 +5,7 @@ import './AdminDashboard.css';
 import ChatbotUI from "../../components/ChatbotUI";
 import Footer from '../../components/Footer';
 import ReviewModal from '../../components/ReviewModal';
+import DetailsModal from './DetailsModal';
 
 // Create axios instance with interceptors for authentication
 const axiosInstance = axios.create({
@@ -109,6 +110,11 @@ const AdminDashboard = () => {
       fetchPendingApplications();
     }
   };
+  const [detailsModal, setDetailsModal] = useState({
+  isOpen: false,
+  type: '', // 'event' or 'application'
+  item: null
+});
   
   useEffect(() => {
     if (activeTab === 'events') {
@@ -748,7 +754,10 @@ const handleReviewApplication = async (applicationId, approved, feedback = '') =
                       </thead>
                       <tbody>
                         {filteredEvents.map(event => (
-                          <tr key={event.id}>
+                          <tr     
+                          key={event.id} 
+                          onClick={() => setDetailsModal({ isOpen: true, type: 'event', item: event })} 
+                          className="clickable-row">
                             <td>
                               <div className="event-details">
                                 <strong className="event-title">{event.title}</strong>
@@ -900,7 +909,10 @@ const handleReviewApplication = async (applicationId, approved, feedback = '') =
                     </thead>
                     <tbody>
                       {filteredApplications.map(application => (
-                        <tr key={application.id}>
+                        <tr    
+                          key={application.id} 
+                          onClick={() => setDetailsModal({ isOpen: true, type: 'application', item: application })} 
+                          className="clickable-row">
                           <td>
                             <div className="applicant-details">
                               <strong className="applicant-name">{application.applicantName || 'N/A'}</strong>
@@ -931,13 +943,16 @@ const handleReviewApplication = async (applicationId, approved, feedback = '') =
                             <div className="action-buttons">
                               <button 
                                 className="btn-approve"
-                                onClick={() => setReviewModal({
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setReviewModal({
                                   isOpen: true,
                                   type: 'app-approve',
                                   itemId: application.id,
                                   itemName: application.applicantName,
                                   title: 'Approve Application'
-                                })}
+                                })
+                              } }
                                 title="Approve Application"
                               >
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -947,13 +962,16 @@ const handleReviewApplication = async (applicationId, approved, feedback = '') =
                               </button>
                               <button 
                                 className="btn-reject"
-                                onClick={() => setReviewModal({
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setReviewModal({
                                   isOpen: true,
                                   type: 'app-reject',
                                   itemId: application.id,
                                   itemName: application.applicantName,
                                   title: 'Reject Application'
-                                })}
+                                })
+                              }}
                                 title="Reject Application"
                               >
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -999,6 +1017,16 @@ const handleReviewApplication = async (applicationId, approved, feedback = '') =
         title={reviewModal.title}
         type={reviewModal.type.includes('approve') ? 'Approve' : 'Reject'}
         itemName={reviewModal.itemName}
+      />
+      <DetailsModal
+        isOpen={detailsModal.isOpen}
+        onClose={() => setDetailsModal({ isOpen: false, type: '', item: null })}
+        type={detailsModal.type}
+        item={detailsModal.item}
+        onApprove={detailsModal.type === 'event' ? handleApproveEvent : (id, feedback) => handleReviewApplication(id, true, feedback)}
+        onReject={detailsModal.type === 'event' ? handleRejectEvent : (id, feedback) => handleReviewApplication(id, false, feedback)}
+        formatDate={formatDate}
+        formatDateTime={formatDateTime}
       />
       
       <ChatbotUI />
