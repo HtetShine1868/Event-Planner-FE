@@ -35,6 +35,9 @@ const UserDashboard = () => {
   const [filterLocation, setFilterLocation] = useState('');
   const [category, setCategory] = useState('All');
   const [categories, setCategories] = useState([]);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+    const [lastUpdated, setLastUpdated] = useState(Date.now());
+     const [tokenUserId, setTokenUserId] = useState(null);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -73,6 +76,9 @@ const UserDashboard = () => {
 
   // ===================== EFFECTS & DATA FETCH (UNCHANGED LOGIC) =====================
   useEffect(() => {
+    const userIdFromToken = getUserIdFromToken();
+    setTokenUserId(userIdFromToken);
+    console.log("Token user ID:", userIdFromToken);
     const fetchCategories = async () => {
       try {
         const res = await API.get('/event-categories');
@@ -91,34 +97,30 @@ const UserDashboard = () => {
       let res;
 
       switch (tab) {
-      case 'trending': {
-        // For trending events, use the correct parameters that your backend expects
-        const params = { 
-          limit: PAGE_SIZE, // Your backend expects 'limit' not 'size'
-          // page parameter might not be supported by your current backend
-        };
-        
-        if (trendingCategory) 
-          params.categoryId = trendingCategory;
-        
-        try {
-          res = await API.get('/event/trending', { params });
-          
-          // Since your backend doesn't support pagination for trending events,
-          // you'll need to handle pagination on the frontend
-          const allTrendingEvents = res.data || [];
-          const startIndex = page * PAGE_SIZE;
-          const paginatedEvents = allTrendingEvents.slice(startIndex, startIndex + PAGE_SIZE);
-          
-          setTrendingEvents(paginatedEvents);
-          setTrendingPage(page);
-          setTrendingTotalPages(Math.ceil(allTrendingEvents.length / PAGE_SIZE));
-        } catch (err) {
-          console.error('Failed to fetch trending events', err);
-          setTrendingEvents([]);
-        }
-        break;
-      }
+          case 'trending': {
+            const params = { 
+              page: page,
+              size: PAGE_SIZE
+            };
+            
+            // Add categoryId parameter if a category is selected
+            if (trendingCategory) {
+              params.categoryId = trendingCategory;
+            }
+            
+            try {
+              res = await API.get('/event/trending', { params });
+              
+              setTrendingEvents(res.data.content || []);
+              setTrendingPage(page);
+              setTrendingTotalPages(res.data.totalPages || 1);
+            } catch (err) {
+              console.error('Failed to fetch trending events', err);
+              setTrendingEvents([]);
+              setTrendingTotalPages(1);
+            }
+            break;
+          }
         case 'registered': {
           const registeredParams = { page, size: PAGE_SIZE };
           res = await API.get('/registrations/my', { params: registeredParams });
@@ -181,6 +183,7 @@ const UserDashboard = () => {
       await API.post('/register', { eventId });
       alert('Successfully registered for the event!');
       setRegisteredEventIds((prev) => new Set(prev).add(eventId));
+      
       fetchEvents('registered', 0);
       if (activeTab === 'all') fetchEvents('all', allPage);
     } catch (err) {
@@ -188,6 +191,40 @@ const UserDashboard = () => {
       alert('Failed to register for the event. Please try again.');
     }
   };
+  // Add this debug function
+const debugUserInfo = async () => {
+  try {
+    // Check what's in localStorage
+    const token = localStorage.getItem('token');
+    console.log("Token from localStorage:", token);
+    
+    if (token) {
+      // Decode the token to see what user ID it contains
+      const decoded = jwtDecode(token);
+      console.log("Decoded token payload:", decoded);
+      console.log("User ID from token:", decoded.id);
+      console.log("User ID type:", typeof decoded.id);
+    }
+    
+    // Check the user object from state
+    console.log("User object from state:", user);
+    console.log("User ID from state:", user?.id);
+    
+    // Make API call to verify what the backend thinks
+    const response = await API.get('/user/me'); // or your user profile endpoint
+    console.log("Current user from API:", response.data);
+    
+  } catch (error) {
+    console.error("Debug error:", error);
+  }
+};
+
+// Call this function when component mounts or when user changes
+useEffect(() => {
+  if (user) {
+    debugUserInfo();
+  }
+}, [user]);
 
   useEffect(() => {
     fetchEvents('trending', 0);
@@ -211,10 +248,17 @@ const UserDashboard = () => {
       fetchEvents('registered', 0);
     }
   }, [activeTab]);
+    useEffect(() => {
+      if (activeTab === 'trending') {
+        fetchEvents('trending', 0); // Reset to page 0 when category changes
+      }
+    }, [trendingCategory]);
 
   useEffect(() => {
     fetchAllRegisteredEventIds();
   }, []);
+
+
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -599,8 +643,7 @@ useEffect(() => {
                   onChange={(e) => {
                     const categoryId = e.target.value;
                     setTrendingCategory(categoryId);
-                    setTrendingPage(0);
-                    fetchEvents("trending", 0); // 🔹 refetch with selected category
+                    setTrendingPage(0); // Reset to first page when category changes
                   }}
                   className="border border-gray-300 rounded-lg px-3 py-2 bg-white shadow-sm max-w-xs"
                 >
@@ -673,7 +716,7 @@ useEffect(() => {
               </div>
 
               {/* Pagination (if applicable for trending) */}
-              {renderPagination()}
+     
             </div>
           )}
 
@@ -720,7 +763,7 @@ useEffect(() => {
             <div className="max-w-3xl mx-auto bg-white shadow-xl rounded-2xl p-8 border border-gray-100">
               <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Apply to Become an Organizer 🚀</h2>
               <OrganizerApplicationForm />
-              <p className="text-sm text-gray-500 mt-6 text-center">We’ll review your application and get back to you via email.</p>
+              <p className="text-sm text-gray-500 mt-6 text-center">We’ll review your application and get back to you via notifiaction</p>
             </div>
           )}
 
@@ -728,7 +771,7 @@ useEffect(() => {
           {activeTab === 'recommended' && user?.id && (
             <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Recommended Events For You</h2>
-              <RecommendedEvents userId={user.id} />
+              <RecommendedEvents userId={tokenUserId} refreshTrigger={refreshTrigger} />
             </div>
           )}
 

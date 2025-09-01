@@ -1,51 +1,138 @@
 import React, { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import dayjs from "dayjs";
 import { Star } from "lucide-react";
 import FeedbackForm from "../../features/feedback/feedbackForm";
 import { getFeedbackSummary } from "../../features/feedback/feedbackAPI";
 import API from "../../services/axiosInstance";
-import Modal from "react-modal";
 import { toast } from "react-toastify";
-import MapComponent from "../../components/MapComponent"; // make sure the path is correct
-
 
 const EventDetails = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const fromTab = location.state?.fromTab || "all";
-  const { event, isRegistered: initialIsRegistered } = location.state || {};
 
+  const [event, setEvent] = useState(location.state?.event || null);
   const [feedbackSummary, setFeedbackSummary] = useState(null);
-  const [isRegistered, setIsRegistered] = useState(initialIsRegistered || false);
-  const [loading, setLoading] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [showFeedbackForm, setShowFeedbackForm] = useState(true);
+  const [isRegistered, setIsRegistered] = useState(location.state?.isRegistered || false);
+  const [loading, setLoading] = useState(true);
+  const [registerLoading, setRegisterLoading] = useState(false);
+  const [showFeedbackForm, setShowFeedbackForm] = useState(false);
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
 
   useEffect(() => {
-    if (!event) return;
-    loadFeedbackSummary();
-  }, [event]);
+    if (id) {
+      fetchEventData();
+    }
+  }, [id]);
+
+  const fetchEventData = async () => {
+    try {
+      setLoading(true);
+      
+      // 1. Fetch event details (if not passed in state)
+      if (!event) {
+        const eventRes = await API.get(`/event/${id}`);
+        setEvent(eventRes.data);
+      }
+      
+      // 2. Check registration status (but respect passed state)
+      await checkRegistrationStatus();
+      
+      // 3. Load feedback summary
+      await loadFeedbackSummary();
+      
+    } catch (error) {
+      console.error('Failed to fetch event details:', error);
+      toast.error('Failed to load event details');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const checkRegistrationStatus = async () => {
+    try {
+      // Method 1: Try to get specific registration check
+      try {
+        const checkRes = await API.get(`/registrations/check-event/${id}`);
+        if (checkRes.data !== undefined) {
+          setIsRegistered(checkRes.data.registered || checkRes.data === true);
+          return;
+        }
+      } catch (checkError) {
+        console.log('Specific check endpoint not available, using fallback');
+      }
+
+      // Method 2: Check all user registrations
+      const response = await API.get('/registrations/my?size=100');
+      const userRegistrations = response.data.content || [];
+      
+      const isUserRegistered = userRegistrations.some(registration => {
+        const eventId = registration.event?.id || registration.eventId;
+        return eventId && parseInt(eventId) === parseInt(id);
+      });
+      
+      setIsRegistered(isUserRegistered);
+      
+    } catch (error) {
+      console.warn('All registration checks failed:', error);
+      
+      // Final fallback: Use passed state or assume not registered
+      if (location.state?.isRegistered !== undefined) {
+        setIsRegistered(location.state.isRegistered);
+      } else {
+        setIsRegistered(false);
+      }
+    }
+  };
 
   const loadFeedbackSummary = async () => {
     try {
-      const summary = await getFeedbackSummary(event.id);
+      const summary = await getFeedbackSummary(id);
       setFeedbackSummary(summary);
     } catch (err) {
       console.error("Failed to load feedback summary:", err);
     }
   };
 
+  const handleRegister = async () => {
+    setRegisterLoading(true);
+    try {
+      const response = await API.post("/registrations/register", { eventId: id });
+      setIsRegistered(true);
+      toast.success(response.data.message || "Registration successful!");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Registration failed.");
+    } finally {
+      setRegisterLoading(false);
+    }
+  };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg mt-8">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
+          <div className="h-10 bg-gray-200 rounded w-3/4 mb-4"></div>
+          <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-2/3 mb-6"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Event not found
   if (!event) {
     return (
       <div className="p-8 text-center text-gray-500">
-        <p>Event data not available.</p>
+        <p>Event not found.</p>
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate("/user-dashboard", { state: { tab: fromTab } })}
           className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
         >
-          Go Back
+          Back to Events
         </button>
       </div>
     );
@@ -58,40 +145,16 @@ const EventDetails = () => {
     endTime,
     location: eventLocation,
     capacity,
-    registeredCount,
+    registeredCount = 0,
     categoryName,
     status,
     organizerUsername,
   } = event;
 
-  const availableSeats = Math.max(0, capacity - registeredCount);
+  const availableSeats = Math.max(0, (capacity || 0) - (registeredCount || 0));
   const eventEnded = dayjs().isAfter(dayjs(endTime));
   const formatDateTime = (dt) =>
     dt ? dayjs(dt).format("dddd, MMMM D, YYYY [at] h:mm A") : "";
-
-  const handleRegister = async () => {
-    setLoading(true);
-    try {
-      const response = await API.post("/registrations/register", { eventId: event.id });
-      setIsRegistered(true);
-      toast.success(response.data.message || "Registration successful!");
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Registration failed.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const ratingToNumber = (ratingEnum) => {
-    switch (ratingEnum) {
-      case "ONE": return 1;
-      case "TWO": return 2;
-      case "THREE": return 3;
-      case "FOUR": return 4;
-      case "FIVE": return 5;
-      default: return 0;
-    }
-  };
 
   const renderAverageStars = () => {
     if (!feedbackSummary || !feedbackSummary.averageRating) return null;
@@ -172,7 +235,7 @@ const EventDetails = () => {
         }`}>
           {availableSeats > 0 ? `${availableSeats} spots left` : "Full"}
         </div>
-        <div className="text-sm text-gray-600">({registeredCount}/{capacity || "N/A"} registered)</div>
+        <div className="text-sm text-gray-600">({registeredCount || 0}/{capacity || "N/A"} registered)</div>
       </div>
 
       {/* Organizer */}
@@ -196,39 +259,48 @@ const EventDetails = () => {
         </div>
       )}
 
-      {/* Register Button */}
+      {/* Register Button or Feedback Form */}
       <div className="mb-6">
         {isRegistered ? (
-          <div className="text-green-600 font-semibold">You are registered for this event.</div>
+          <div>
+            <div className="text-green-600 font-semibold mb-4">You are registered for this event.</div>
+            {!feedbackSubmitted && (
+              <button
+                onClick={() => setShowFeedbackForm(true)}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Submit Feedback
+              </button>
+            )}
+          </div>
         ) : (
           <button
-            disabled={loading || availableSeats === 0 || eventEnded}
+            disabled={registerLoading || availableSeats === 0 || eventEnded}
             onClick={handleRegister}
             className={`w-full md:w-auto px-6 py-3 rounded-lg font-semibold text-white transition ${
-              loading || availableSeats === 0 || eventEnded
+              registerLoading || availableSeats === 0 || eventEnded
                 ? "bg-gray-400 cursor-not-allowed"
                 : "bg-indigo-600 hover:bg-indigo-700"
             }`}
           >
-            {loading ? "Registering..." : "Register Now"}
+            {registerLoading ? "Registering..." : "Register Now"}
           </button>
         )}
       </div>
-{isRegistered && !feedbackSubmitted && (
-  <div className="mt-8">
-    {showFeedbackForm && (
-      <FeedbackForm
-        eventId={event.id}
-        onFeedbackSubmitted={() => {
-          loadFeedbackSummary();
-          setFeedbackSubmitted(true); // mark as submitted
-          setShowFeedbackForm(false); // close form
-        }}
-        onClose={() => setShowFeedbackForm(false)}
-      />
-    )}
-  </div>
-)}
+
+      {/* Feedback Form Modal */}
+      {showFeedbackForm && (
+        <FeedbackForm
+          eventId={id}
+          onFeedbackSubmitted={() => {
+            loadFeedbackSummary();
+            setFeedbackSubmitted(true);
+            setShowFeedbackForm(false);
+            toast.success("Thank you for your feedback!");
+          }}
+          onClose={() => setShowFeedbackForm(false)}
+        />
+      )}
     </div>
   );
 };
