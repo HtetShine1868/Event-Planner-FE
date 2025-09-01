@@ -915,15 +915,17 @@ const handleReviewApplication = async (applicationId, approved, feedback = '') =
                           className="clickable-row">
                           <td>
                             <div className="applicant-details">
-                              <strong className="applicant-name">{application.applicantName || 'N/A'}</strong>
-                              {application.organization && (
-                                <span className="organization">{application.organization}</span>
+                              <strong className="applicant-name">
+                                {application.organizerName || 'N/A'}
+                              </strong>
+                              {application.description && (
+                                <span className="organization">{application.description}</span>
                               )}
                             </div>
                           </td>
                           <td>
-                            <a href={`mailto:${application.applicantEmail}`} className="email-link">
-                              {application.applicantEmail || 'N/A'}
+                            <a href={`mailto:${application.email}`} className="email-link">
+                              {application.email || 'N/A'}
                             </a>
                           </td>
                           <td>
@@ -931,12 +933,12 @@ const handleReviewApplication = async (applicationId, approved, feedback = '') =
                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M8 2V6M16 2V6M3 10H21M5 4H19C20.1046 4 21 4.89543 21 6V20C21 21.1046 20.1046 22 19 22H5C3.89543 22 3 21.1046 3 20V6C3 4.89543 3.89543 4 5 4Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                               </svg>
-                              {formatDateTime(application.submissionDate)}
+                              {formatDateTime(application.appliedAt)}
                             </div>
                           </td>
                           <td>
-                            <span className="status-badge pending">
-                              PENDING
+                            <span className={`status-badge ${application.status ? application.status.toLowerCase() : 'pending'}`}>
+                              {application.status || 'PENDING'}
                             </span>
                           </td>
                           <td>
@@ -949,7 +951,7 @@ const handleReviewApplication = async (applicationId, approved, feedback = '') =
                                   isOpen: true,
                                   type: 'app-approve',
                                   itemId: application.id,
-                                  itemName: application.applicantName,
+                                  itemName: application.organizerName,
                                   title: 'Approve Application'
                                 })
                               } }
@@ -968,7 +970,7 @@ const handleReviewApplication = async (applicationId, approved, feedback = '') =
                                   isOpen: true,
                                   type: 'app-reject',
                                   itemId: application.id,
-                                  itemName: application.applicantName,
+                                  itemName: application.organizerName,
                                   title: 'Reject Application'
                                 })
                               }}
