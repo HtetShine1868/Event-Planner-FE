@@ -19,7 +19,6 @@ const Footer = () => {
           <Link to="/admin-dashboard" className="footer-link">Dashboard</Link>
           <Link to="/admin-dashboard?tab=events" className="footer-link">Events</Link>
           <Link to="/admin-dashboard?tab=applications" className="footer-link">Applications</Link>
-          <Link to="/admin-settings" className="footer-link">Settings</Link>
         </div>
 
         {/* Support */}

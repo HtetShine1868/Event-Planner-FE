@@ -34,9 +34,15 @@ const EventCard = ({ event, showRegister = true, isRegistered = false }) => {
   const eventEnded = dayjs().isAfter(dayjs(endTime));
   const eventLive = dayjs().isAfter(dayjs(startTime)) && dayjs().isBefore(dayjs(endTime));
 
-  const handleClick = () => {
-    navigate(`/events/${id}`, { state: { event, isRegistered } });
-  };
+const handleClick = () => {
+  navigate(`/events/${id}`, { 
+    state: { 
+      event, 
+      isRegistered, 
+      fromTab: "registered" 
+    } 
+  });
+};
 
   const handleImageError = () => setImageError(true);
 

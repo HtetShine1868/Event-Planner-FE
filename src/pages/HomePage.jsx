@@ -105,14 +105,19 @@ const HomePage = () => {
       </nav>
 
       {/* Hero */}
-      <section id="home" className="gradient-bg text-white py-20">
+      <section id="home" className="gradient-bg py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6">Plan Your Perfect Event</h1>
-          <p className="text-xl md:text-2xl mb-8 text-purple-100 max-w-3xl mx-auto">
+          <h1 className="text-4xl md:text-6xl font-bold mb-6 text-purple-200">
+            Plan Your Perfect Event
+          </h1>
+          <p className="text-xl md:text-2xl mb-8 text-purple-300 max-w-3xl mx-auto">
             From intimate gatherings to grand celebrations, we help you create unforgettable moments with seamless event planning tools.
           </p>
         </div>
       </section>
+
+
+
 
       {/* Features */}
       <section className="py-12 bg-white">

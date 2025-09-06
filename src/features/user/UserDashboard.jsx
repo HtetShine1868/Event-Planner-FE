@@ -16,7 +16,7 @@ const PAGE_SIZE = 6;
 const UserDashboard = () => {
   // ===================== STATE (UNCHANGED LOGIC) =====================
   const [activeTab, setActiveTab] = useState('trending');
-
+  const [filterRegistrationStatus, setFilterRegistrationStatus] = useState('all');
   const [trendingEvents, setTrendingEvents] = useState([]);
   const [trendingCategory, setTrendingCategory] = useState('');
   const [trendingPage, setTrendingPage] = useState(0);
@@ -95,7 +95,7 @@ const UserDashboard = () => {
     setLoading(true);
     try {
       let res;
-
+    
       switch (tab) {
           case 'trending': {
             const params = { 
@@ -139,6 +139,8 @@ const UserDashboard = () => {
           const allParams = { page, size: PAGE_SIZE };
           if (filterCategoryId) allParams.categoryId = filterCategoryId;
           if (filterLocation) allParams.location = filterLocation;
+          if (searchTerm) allParams.title = searchTerm; 
+          
 
           res = await API.get('/event/search', { params: allParams });
           setAllEvents(res.data.content || []);
@@ -394,31 +396,44 @@ useEffect(() => {
       break;
   }
 
-  const filteredEvents = eventsToShow.filter((event) =>
-    event.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    const filteredEvents = eventsToShow.filter((event) => {
+      // Title search filter
+      const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      // Registration status filter (only for 'all' tab)
+      let matchesRegistration = true;
+      if (activeTab === 'all') {
+        if (filterRegistrationStatus === 'registered') {
+          matchesRegistration = registeredEventIds.has(event.id);
+        } else if (filterRegistrationStatus === 'unregistered') {
+          matchesRegistration = !registeredEventIds.has(event.id);
+        }
+      }
+      
+      return matchesSearch && matchesRegistration;
+    });
 
-  const renderPagination = () => {
-    if (totalPages <= 1) return null;
+    const renderPagination = () => {
+      if (totalPages <= 1) return null;
 
-    const buttons = [];
-    for (let i = 0; i < totalPages; i++) {
-      buttons.push(
-        <button
-          key={i}
-          className={`px-4 py-2 rounded-full font-medium transition shadow-sm ${
-            i === currentPage
-              ? 'bg-indigo-600 text-white shadow'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-          }`}
-          onClick={() => fetchEvents(activeTab, i)}
-        >
-          {i + 1}
-        </button>
-      );
-    }
-    return <div className="flex justify-center gap-3 mt-8">{buttons}</div>;
-  };
+      const buttons = [];
+      for (let i = 0; i < totalPages; i++) {
+        buttons.push(
+          <button
+            key={i}
+            className={`px-4 py-2 rounded-full font-medium transition shadow-sm ${
+              i === currentPage
+                ? 'bg-indigo-600 text-white shadow'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+            onClick={() => fetchEvents(activeTab, i)}
+          >
+            {i + 1}
+          </button>
+        );
+      }
+      return <div className="flex justify-center gap-3 mt-8">{buttons}</div>;
+    };
 
 
   // ===================== UI =====================
@@ -446,7 +461,12 @@ useEffect(() => {
                   type="text"
                   placeholder="Search events by title..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => {
+
+
+                    setSearchTerm(e.target.value)
+
+                  }}
                   className="px-5 py-2.5 rounded-full border border-gray-300 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-64"
                 />
               </div>
@@ -754,6 +774,21 @@ useEffect(() => {
                   }}
                   className="border border-gray-300 rounded-lg px-3 py-2 bg-white shadow-sm max-w-xs"
                 />
+              </div>
+                 <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-600">Registration:</label>
+                <select
+                  value={filterRegistrationStatus}
+                  onChange={(e) => {
+                    setFilterRegistrationStatus(e.target.value);
+                    setAllPage(0);
+                  }}
+                  className="border border-gray-300 rounded-lg px-3 py-2 bg-white shadow-sm max-w-xs"
+                >
+                  <option value="all">All Events</option>
+                  <option value="registered">Registered</option>
+                  <option value="unregistered">Not Registered</option>
+                </select>
               </div>
             </div>
           )}

@@ -72,29 +72,20 @@ const Navibar = () => {
               </li>
               <li>
                 <Link
-                  to="/events"
+                  to="/user-prf"
                   className="block px-4 py-2 hover:bg-indigo-50 transition"
                   onClick={() => setDropdownOpen(false)}
                 >
-                  Event
+                  Profile
                 </Link>
               </li>
               <li>
                 <Link
-                  to="/search"
+                  to="/chatbot"
                   className="block px-4 py-2 hover:bg-indigo-50 transition"
                   onClick={() => setDropdownOpen(false)}
                 >
-                  Search
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/about"
-                  className="block px-4 py-2 hover:bg-indigo-50 transition"
-                  onClick={() => setDropdownOpen(false)}
-                >
-                  About
+                  Chatbot
                 </Link>
               </li>
               <li>

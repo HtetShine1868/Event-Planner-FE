@@ -58,6 +58,7 @@ const App = () => {
           <Route path="/events/:id" element={<EventDetails />} />
         </Route>
       </Routes>
+
     </>
   );
 };

@@ -158,8 +158,7 @@ const AdminDashboard = () => {
     }
   };
 
-// Get user ID from token - ensure it returns a numeric ID
-// Get user ID from token - extract the numeric ID from principal
+
 const getUserIdFromToken = () => {
   const token = localStorage.getItem('token');
   if (!token) return null;
@@ -168,19 +167,27 @@ const getUserIdFromToken = () => {
     const payload = JSON.parse(atob(token.split('.')[1]));
     console.log('Token payload:', payload); // For debugging
     
-    // The user ID is in the 'sub' field or might be in a custom field
-    // Based on the Spring Security principal, it should be a numeric ID
-    const userId = payload.userId || payload.sub;
+    // Use the 'id' field directly from the payload instead of 'sub'
+    const userId = payload.id || payload.userId || payload.sub;
     
-    // If it's a string that contains letters and numbers, extract just the numeric part
-    if (typeof userId === 'string' && /[a-zA-Z]/.test(userId)) {
-      // This handles cases like "admin1" where we need to extract "1"
+    // If we have a numeric ID, return it directly
+    if (typeof userId === 'number') {
+      return userId;
+    }
+    
+    // If it's a string that contains a number, try to parse it
+    if (typeof userId === 'string') {
+      // Check if it's already a numeric string
+      if (/^\d+$/.test(userId)) {
+        return parseInt(userId, 10);
+      }
+      
+      // Extract numeric part from strings like "admin1"
       const numericPart = userId.replace(/\D/g, '');
       return numericPart ? parseInt(numericPart, 10) : null;
     }
     
-    // Return as number
-    return typeof userId === 'number' ? userId : parseInt(userId, 10);
+    return null;
   } catch (e) {
     console.error('Error decoding token:', e);
     return null;
@@ -197,7 +204,7 @@ const getUserIdFromToken = () => {
 
     try {
       // Use your API instance to fetch user profile
-      const res = await axios.get(`/user/${userId}/profile`);
+      const res = await axiosInstance.get(`/user/${userId}/profile`);
       setUser(res.data);
     } catch (err) {
       console.error('Failed to fetch profile', err);

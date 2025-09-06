@@ -52,6 +52,10 @@ const EventDetails = () => {
   };
 
   const checkRegistrationStatus = async () => {
+      if (location.state?.isRegistered !== undefined) {
+    setIsRegistered(location.state.isRegistered);
+    return;
+  }
     try {
       // Method 1: Try to get specific registration check
       try {
@@ -260,33 +264,34 @@ const EventDetails = () => {
       )}
 
       {/* Register Button or Feedback Form */}
-      <div className="mb-6">
-        {isRegistered ? (
-          <div>
-            <div className="text-green-600 font-semibold mb-4">You are registered for this event.</div>
-            {!feedbackSubmitted && (
-              <button
-                onClick={() => setShowFeedbackForm(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                Submit Feedback
-              </button>
-            )}
-          </div>
-        ) : (
-          <button
-            disabled={registerLoading || availableSeats === 0 || eventEnded}
-            onClick={handleRegister}
-            className={`w-full md:w-auto px-6 py-3 rounded-lg font-semibold text-white transition ${
-              registerLoading || availableSeats === 0 || eventEnded
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-indigo-600 hover:bg-indigo-700"
-            }`}
-          >
-            {registerLoading ? "Registering..." : "Register Now"}
-          </button>
-        )}
-      </div>
+{/* Register Button or Feedback Form */}
+<div className="mb-6">
+  {isRegistered ? (
+    <div>
+      <div className="text-green-600 font-semibold mb-4">You are registered for this event.</div>
+      {!feedbackSubmitted && (
+        <button
+          onClick={() => setShowFeedbackForm(true)}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Submit Feedback
+        </button>
+      )}
+    </div>
+  ) : (
+    <button
+      disabled={registerLoading || availableSeats === 0 || eventEnded}
+      onClick={handleRegister}
+      className={`w-full md:w-auto px-6 py-3 rounded-lg font-semibold text-white transition ${
+        registerLoading || availableSeats === 0 || eventEnded
+          ? "bg-gray-400 cursor-not-allowed"
+          : "bg-indigo-600 hover:bg-indigo-700"
+      }`}
+    >
+      {registerLoading ? "Registering..." : "Register Now"}
+    </button>
+  )}
+</div>
 
       {/* Feedback Form Modal */}
       {showFeedbackForm && (

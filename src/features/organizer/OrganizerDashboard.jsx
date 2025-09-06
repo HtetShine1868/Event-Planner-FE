@@ -2,7 +2,7 @@
   import React, { useEffect, useState, useRef } from 'react';
 import API from '../../services/axiosInstance';
 import Navibar from '../../components/Navibar';
-import { useNavigate } from "react-router-dom";  // ✅ import navigate
+import { useNavigate } from "react-router-dom";  
 import { jwtDecode } from "jwt-decode"; 
 import OrganizerEventCard from '../../components/common/OrganizerEventCard';
 import { getApprovedEvents } from '../../services/eventService';
@@ -247,6 +247,8 @@ const getUserIdFromToken = () => {
     return null;
   }
 };
+
+
 
 
 // Add this useEffect to fetch user profile

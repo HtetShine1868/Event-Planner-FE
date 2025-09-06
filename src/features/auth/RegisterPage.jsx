@@ -182,9 +182,6 @@ const RegisterPage = () => {
                   {loading ? 'Verifying...' : 'Verify OTP'}
                 </button>
               </form>
-              <p className="mt-6 text-center text-gray-600">
-                Didn't receive OTP? <button className="text-indigo-600 font-semibold hover:underline">Resend</button>
-              </p>
             </>
           )}
         </div>
